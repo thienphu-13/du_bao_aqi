@@ -485,34 +485,44 @@ def render_gauge(value: float, province: str, ts_str: str) -> go.Figure:
 
 
 def render_forecast_chart(predictions: dict) -> go.Figure:
-    hs  = list(predictions.keys())
-    vs  = list(predictions.values())
-    fig = go.Figure(go.Bar(
+    hs     = list(predictions.keys())
+    vals   = list(predictions.values())
+    colors = [aqi_color(v) for v in vals]
+    labels = [aqi_label(v) for v in vals]
+
+    fig = go.Figure()
+
+    # Vùng nền ngưỡng (dùng rgba — fix lỗi Plotly mới)
+    for lo, hi, rgba in zip(AQI_BINS[:-1], AQI_BINS[1:], AQI_RGBA):
+        fig.add_hrect(y0=lo, y1=hi, fillcolor=rgba, line_width=0)
+
+    fig.add_trace(go.Bar(
         x=[f"t+{h}h" for h in hs],
-        y=vs,
-        marker_color=[aqi_color(v) for v in vs],
-        marker_line_color="rgba(0,0,0,0.15)",
-        marker_line_width=1.5,
-        text=[f"<b>{v:.0f}</b><br>{AQI_LABELS[aqi_level(v)]}" for v in vs],
+        y=vals,
+        marker=dict(color=colors, line=dict(color="rgba(0,0,0,0.15)", width=1)),
+        text=[f"<b>{v:.0f}</b><br><span style='font-size:10px'>{l}</span>"
+              for v, l in zip(vals, labels)],
         textposition="outside",
         textfont={"size": 11},
+        hovertemplate="<b>%{x}</b><br>AQI: %{y:.0f}<extra></extra>",
     ))
-    for thr, lbl, col in [
-        (50, "Tốt", "#00e400"), (100, "Trung bình", "#ffff00"),
-        (150, "Kém", "#ff7e00"), (200, "Xấu", "#ff0000"),
-    ]:
-        fig.add_hline(y=thr, line_dash="dot", line_color=col, line_width=1.5,
-                      annotation_text=f" {lbl}", annotation_position="left",
-                      annotation_font_color=col, annotation_font_size=11)
+
+    # Đường ngưỡng label
+    for thr, lbl, col in [(50,"Tốt","#009a00"),(100,"T.Bình","#b8a000"),
+                           (150,"Kém","#c05a00"),(200,"Xấu","#aa0000")]:
+        fig.add_hline(y=thr, line_dash="dot", line_color=col, line_width=1.2,
+                      annotation_text=lbl, annotation_position="left",
+                      annotation_font=dict(color=col, size=10))
 
     fig.update_layout(
-        title={"text": "Dự báo AQI — 7 Chân trời", "font": {"size": 16}},
-        xaxis_title="Chân trời dự báo",
-        yaxis_title="US AQI",
-        yaxis_range=[0, max(max(vs) * 1.3, 180)],
-        height=400, showlegend=False,
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
+        **CHART_LAYOUT,
+        title=dict(text="Dự báo AQI — 7 Chân trời", font=dict(size=15, color="#333"), x=0.02),
+        xaxis=dict(title=None, tickfont=dict(size=12)),
+        yaxis=dict(title="US AQI", range=[0, max(max(vals)*1.3, 180)],
+                   gridcolor="rgba(0,0,0,0.06)"),
+        showlegend=False,
+        height=380,
+        bargap=0.35,
     )
     return fig
 
@@ -612,7 +622,30 @@ def render_hourly_pattern(df: pd.DataFrame) -> go.Figure:
     )
     return fig
 
+def render_pie(counts: pd.Series) -> go.Figure:
+    # Map index sang tên nhãn và màu
+    labels = [AQI_LABELS[i] for i in counts.index]
+    colors = [AQI_COLORS[i] for i in counts.index]
+    
+    fig = go.Figure(data=[go.Pie(
+        labels=labels,
+        values=counts.values,
+        hole=0.4,
+        marker=dict(colors=colors, line=dict(color='#fff', width=2)),
+        textinfo='percent',
+        hoverinfo='label+value'
+    )])
 
+    fig.update_layout(
+        template="plotly_white",
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5),
+        margin=dict(l=10, r=10, t=30, b=10),
+        height=300
+    )
+    return fig
+
+'''
 def render_pie(lc: pd.Series) -> go.Figure:
     fig = go.Figure(go.Pie(
         labels=[f"{RECOMMENDATIONS[i]['icon']} {AQI_LABELS[i]}" for i in lc.index],
@@ -631,7 +664,7 @@ def render_pie(lc: pd.Series) -> go.Figure:
         margin=dict(l=5, r=5, t=10, b=5),
     )
     return fig
-
+'''
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 7. UI COMPONENTS
