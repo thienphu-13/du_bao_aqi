@@ -485,82 +485,80 @@ def render_gauge(value: float, province: str, ts_str: str) -> go.Figure:
 
 
 def render_forecast_chart(predictions: dict) -> go.Figure:
-    hs     = list(predictions.keys())
-    vals   = list(predictions.values())
-    colors = [aqi_color(v) for v in vals]
-    
-    fig = go.Figure()
-
-    # Vẽ vùng nền màu
-    for lo, hi, rgba in zip(AQI_BINS[:-1], AQI_BINS[1:], AQI_RGBA):
-        fig.add_hrect(y0=lo, y1=hi, fillcolor=rgba, line_width=0, layer="below")
-
-    # Vẽ cột
-    fig.add_trace(go.Bar(
+    hs  = list(predictions.keys())
+    vs  = list(predictions.values())
+    fig = go.Figure(go.Bar(
         x=[f"t+{h}h" for h in hs],
-        y=vals,
-        marker=dict(color=colors, line=dict(color="rgba(0,0,0,0.2)", width=1)),
-        text=[f"<b>{v:.0f}</b>" for v in vals],
+        y=vs,
+        marker_color=[aqi_color(v) for v in vs],
+        marker_line_color="rgba(0,0,0,0.15)",
+        marker_line_width=1.5,
+        text=[f"<b>{v:.0f}</b><br>{AQI_LABELS[aqi_level(v)]}" for v in vs],
         textposition="outside",
-        hoverinfo="y+x"
+        textfont={"size": 11},
     ))
+    for thr, lbl, col in [
+        (50, "Tốt", "#00e400"), (100, "Trung bình", "#ffff00"),
+        (150, "Kém", "#ff7e00"), (200, "Xấu", "#ff0000"),
+    ]:
+        fig.add_hline(y=thr, line_dash="dot", line_color=col, line_width=1.5,
+                      annotation_text=f" {lbl}", annotation_position="left",
+                      annotation_font_color=col, annotation_font_size=11)
 
-    # Thêm nhãn bên trái
-    thresholds = [(50,"Tốt","#009a00"),(100,"T.Bình","#b8a000"),(150,"Kém","#c05a00"),(200,"Xấu","#aa0000")]
-    for thr, lbl, col in thresholds:
-        fig.add_hline(y=thr, line_dash="dot", line_color=col, line_width=1, opacity=0.3)
-        fig.add_annotation(x=0, xref="paper", xanchor="right", y=thr, text=f"<b>{lbl}</b>",
-                           showarrow=False, font=dict(size=10, color=col), xshift=-10)
-
-    # Cấu hình trực tiếp (Không dùng **CHART_LAYOUT)
     fig.update_layout(
-        template="plotly_white",
-        font=dict(family="Inter, sans-serif"),
-        title=dict(text="<b>Dự báo AQI — 7 Chân trời</b>", font=dict(size=16), x=0.02),
-        xaxis=dict(showgrid=False),
-        yaxis=dict(
-            title="US AQI",
-            range=[0, max(max(vals)*1.2, 210)],
-            tickvals=[0, 50, 100, 150, 200, 300],
-            ticktext=["0", "50", "100", "150", "200", "300"]
-        ),
-        margin=dict(l=70, r=20, t=60, b=40),
-        height=400,
-        showlegend=False
+        title={"text": "Dự báo AQI — 7 Chân trời", "font": {"size": 16}},
+        xaxis_title="Chân trời dự báo",
+        yaxis_title="US AQI",
+        yaxis_range=[0, max(max(vs) * 1.3, 180)],
+        height=400, showlegend=False,
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
     )
     return fig
 
-def render_historical_chart(df: pd.DataFrame) -> go.Figure:
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
+def render_history_chart(df: pd.DataFrame) -> go.Figure:
+    dv = df[df[TARGET].notna()].copy()
+    fig = go.Figure()
 
-    # Vẽ dải màu nền
-    for lo, hi, rgba in zip(AQI_BINS[:-1], AQI_BINS[1:], AQI_RGBA):
-        fig.add_hrect(y0=lo, y1=hi, fillcolor=rgba, line_width=0, layer="below")
+    # Vùng nền màu AQI
+    for lo, hi, col in [
+        (0,   50,  "rgba(0,228,0,0.12)"),
+        (50,  100, "rgba(255,255,0,0.12)"),
+        (100, 150, "rgba(255,126,0,0.12)"),
+        (150, 200, "rgba(255,0,0,0.12)"),
+        (200, 300, "rgba(143,63,151,0.12)"),
+    ]:
+        fig.add_hrect(y0=lo, y1=hi, fillcolor=col, line_width=0)
 
-    # Đường AQI chính
-    fig.add_trace(
-        go.Scatter(x=df["time"], y=df[TARGET], name="US AQI",
-                   line=dict(color="#2c3e50", width=3), fill='tozeroy',
-                   fillcolor='rgba(44, 62, 80, 0.05)'),
-        secondary_y=False
-    )
+    fig.add_trace(go.Scatter(
+        x=dv["time"], y=dv[TARGET],
+        mode="lines+markers",
+        line=dict(color="#1565c0", width=2),
+        marker=dict(color=[aqi_color(v) for v in dv[TARGET]], size=5,
+                    line=dict(color="#fff", width=0.5)),
+        name="AQI",
+        hovertemplate="<b>%{x|%d/%m %H:%M}</b><br>AQI: <b>%{y:.0f}</b><extra></extra>",
+    ))
 
-    # Thêm nhãn ngưỡng bên trái
-    thresholds = [(50,"Tốt","#009a00"),(100,"T.Bình","#b8a000"),(150,"Kém","#c05a00"),(200,"Xấu","#aa0000")]
-    for thr, lbl, col in thresholds:
-        fig.add_annotation(x=0, xref="paper", xanchor="right", y=thr, text=f"<b>{lbl}</b>",
-                           showarrow=False, font=dict(size=9, color=col), xshift=-5)
+    if "pm2_5" in dv.columns:
+        fig.add_trace(go.Scatter(
+            x=dv["time"], y=dv["pm2_5"],
+            mode="lines", line=dict(color="#e53935", width=1.5, dash="dot"),
+            name="PM2.5 (µg/m³)", yaxis="y2", opacity=0.75,
+        ))
+        fig.update_layout(
+            yaxis2=dict(title="PM2.5 (µg/m³)", overlaying="y",
+                        side="right", showgrid=False),
+        )
 
-    # Cấu hình trực tiếp
     fig.update_layout(
-        template="plotly_white",
-        title=dict(text="<b>Diễn biến 48h qua & Chỉ số phụ</b>", font=dict(size=16), x=0.02),
-        xaxis=dict(showgrid=False, tickformat="%H:%M\n%d/%m"),
-        yaxis=dict(title="US AQI", range=[0, max(df[TARGET].max()*1.2, 160)]),
-        yaxis2=dict(title="Nồng độ", showgrid=False, overlaying="y", side="right"),
-        margin=dict(l=60, r=50, t=80, b=40),
-        height=450,
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        title={"text": "Lịch sử AQI 3 ngày gần nhất", "font": {"size": 16}},
+        xaxis_title="Thời gian",
+        yaxis_title="US AQI",
+        height=430, hovermode="x unified",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
     )
     return fig
 
