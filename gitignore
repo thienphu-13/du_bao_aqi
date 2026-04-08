@@ -1,0 +1,20 @@
+# Secrets — KHÔNG bao giờ commit
+.streamlit/secrets.toml
+credentials.json
+token.json
+*.json
+
+# Model artifacts — load từ Drive khi deploy
+best_pca_models/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.env
+
+# Temp
+.sync_config.json
+*.log
