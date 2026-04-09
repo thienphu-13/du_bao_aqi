@@ -489,40 +489,83 @@ def render_forecast_chart(predictions: dict) -> go.Figure:
     vals   = list(predictions.values())
     colors = [aqi_color(v) for v in vals]
     labels = [aqi_label(v) for v in vals]
+    now    = datetime.now()
+
+    # X-axis: hiển thị giờ thực thay vì "t+Nh"
+    def _x_label(h: int) -> str:
+        dt = now + timedelta(hours=h)
+        if dt.date() == now.date():
+            day = "Hôm nay"
+        elif dt.date() == (now + timedelta(days=1)).date():
+            day = "Ngày mai"
+        else:
+            day = dt.strftime("%d/%m")
+        return f"{dt.strftime('%H:%M')}<br>{day}"
+
+    x_labels = [_x_label(h) for h in hs]
+
+    # Màu text bên trong bar (trắng/đen theo nền)
+    inside_tc = [AQI_TEXT_COLORS[aqi_level(v)] for v in vals]
 
     fig = go.Figure()
 
-    # Vùng nền ngưỡng (dùng rgba — fix lỗi Plotly mới)
+    # Vùng nền ngưỡng
     for lo, hi, rgba in zip(AQI_BINS[:-1], AQI_BINS[1:], AQI_RGBA):
         fig.add_hrect(y0=lo, y1=hi, fillcolor=rgba, line_width=0)
 
+    # Bar — chỉ số AQI bên TRONG bar
     fig.add_trace(go.Bar(
-        x=[f"t+{h}h" for h in hs],
+        x=x_labels,
         y=vals,
         marker=dict(color=colors, line=dict(color="rgba(0,0,0,0.15)", width=1)),
-        text=[f"<b>{v:.0f}</b><br><span style='font-size:10px'>{l}</span>"
-              for v, l in zip(vals, labels)],
-        textposition="outside",
-        textfont={"size": 11},
-        hovertemplate="<b>%{x}</b><br>AQI: %{y:.0f}<extra></extra>",
+        text=[f"<b>{v:.0f}</b>" for v in vals],
+        textposition="inside",
+        insidetextanchor="middle",
+        textfont=dict(size=15, color=inside_tc),
+        customdata=labels,
+        hovertemplate=(
+            "<b>%{x}</b><br>"
+            "AQI: <b>%{y:.0f}</b><br>"
+            "Mức: <b>%{customdata}</b><extra></extra>"
+        ),
     ))
 
-    # Đường ngưỡng label
-    for thr, lbl, col in [(50,"Tốt","#009a00"),(100,"T.Bình","#b8a000"),
-                           (150,"Kém","#c05a00"),(200,"Xấu","#aa0000")]:
+    # Nhãn mức AQI phía TRÊN mỗi bar (không đè số)
+    for xi, (lbl, val) in enumerate(zip(labels, vals)):
+        fig.add_annotation(
+            x=x_labels[xi], y=val,
+            text=f"<b>{lbl}</b>",
+            showarrow=False,
+            yshift=11,
+            font=dict(size=11, color="#333"),
+            bgcolor="rgba(255,255,255,0.78)",
+            borderpad=2,
+        )
+
+    # Đường ngưỡng
+    for thr, lbl, col in [
+        (50,  "Tốt",     "#009a00"),
+        (100, "T.Bình",  "#b8a000"),
+        (150, "Kém",     "#c05a00"),
+        (200, "Xấu",     "#aa0000"),
+    ]:
         fig.add_hline(y=thr, line_dash="dot", line_color=col, line_width=1.2,
                       annotation_text=lbl, annotation_position="left",
                       annotation_font=dict(color=col, size=10))
 
     fig.update_layout(
         **CHART_LAYOUT,
-        title=dict(text="Dự báo AQI — 7 Chân trời", font=dict(size=15, color="#333"), x=0.02),
-        xaxis=dict(title=None, tickfont=dict(size=12)),
-        yaxis=dict(title="US AQI", range=[0, max(max(vals)*1.3, 180)],
-                   gridcolor="rgba(0,0,0,0.06)"),
+        title=dict(text="Dự báo AQI — Các mốc trong 72 giờ tới",
+                   font=dict(size=15, color="#333"), x=0.02),
+        xaxis=dict(title=None, tickfont=dict(size=11)),
+        yaxis=dict(
+            title="US AQI",
+            range=[0, max(max(vals) * 1.38, 210)],
+            gridcolor="rgba(0,0,0,0.06)",
+        ),
         showlegend=False,
-        height=380,
-        bargap=0.35,
+        height=430,
+        bargap=0.38,
     )
     return fig
 
@@ -645,26 +688,7 @@ def render_pie(counts: pd.Series) -> go.Figure:
     )
     return fig
 
-'''
-def render_pie(lc: pd.Series) -> go.Figure:
-    fig = go.Figure(go.Pie(
-        labels=[f"{RECOMMENDATIONS[i]['icon']} {AQI_LABELS[i]}" for i in lc.index],
-        values=lc.values,
-        marker=dict(colors=[AQI_COLORS[i] for i in lc.index],
-                    line=dict(color="white", width=2)),
-        hole=0.45,
-        textinfo="label+percent",
-        textfont=dict(size=11),
-        hovertemplate="<b>%{label}</b><br>%{value} giờ (%{percent})<extra></extra>",
-    ))
-    fig.update_layout(
-        **CHART_LAYOUT,
-        height=280,
-        showlegend=False,
-        margin=dict(l=5, r=5, t=10, b=5),
-    )
-    return fig
-'''
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 7. UI COMPONENTS
@@ -851,10 +875,18 @@ def main():
     # ── HEADER ─────────────────────────────────────────────────────────────────
     col_h1, col_h2 = st.columns([3, 1])
     with col_h1:
-        st.markdown(f'<div class="main-title">🌬️ Dự báo Chất lượng Không khí</div>',
+        st.markdown('<div class="main-title">🌬️ Dự báo Chất lượng Không khí</div>',
                     unsafe_allow_html=True)
-        st.markdown(f"Miền Trung Việt Nam &nbsp;·&nbsp; **{province_name}** "
-                    f"&nbsp;·&nbsp; *Cập nhật: {datetime.now().strftime('%H:%M %d/%m/%Y')}*")
+        # Khoảng dữ liệu đầu vào (5 ngày gần nhất đến hôm nay)
+        _d_end   = date.today()
+        _d_start = _d_end - timedelta(days=5)
+        _range_str = f"{_d_start.strftime('%d/%m')} – {_d_end.strftime('%d/%m/%Y')}"
+        st.markdown(
+            f"Miền Trung Việt Nam &nbsp;·&nbsp; **{province_name}** "
+            f"&nbsp;·&nbsp; <span style='color:#888;font-size:0.88rem'>"
+            f"Dữ liệu quan trắc: {_range_str}</span>",
+            unsafe_allow_html=True,
+        )
     with col_h2:
         st.markdown("")
 
@@ -943,23 +975,35 @@ def main():
 
         st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-        # ── Dự báo 7 chân trời ────────────────────────────────────────────
-        st.markdown("### 📈 Dự báo 7 Chân trời")
+        # ── Dự báo AQI ────────────────────────────────────────────────────
+        st.markdown("### 📈 Dự báo AQI — Các mốc tiếp theo")
+        st.caption(
+            "Dự báo tại các mốc thời gian cụ thể trong 72 giờ tới, "
+            "tính từ thời điểm dữ liệu quan trắc mới nhất."
+        )
         st.plotly_chart(render_forecast_chart(predictions), use_container_width=True)
 
-        # Bảng màu tô
-        rows = []
+        # Bảng chi tiết
+        now_ts = datetime.now()
+        rows   = []
         for h, v in predictions.items():
-            lvl = aqi_level(v)
+            lvl      = aqi_level(v)
+            target_t = now_ts + timedelta(hours=h)
+            if target_t.date() == now_ts.date():
+                day_lbl = "Hôm nay"
+            elif target_t.date() == (now_ts + timedelta(days=1)).date():
+                day_lbl = "Ngày mai"
+            else:
+                day_lbl = target_t.strftime("%d/%m")
             rows.append({
-                "Chân trời": f"t+{h}h",
-                "Thời điểm": (datetime.now() + timedelta(hours=h)).strftime("%H:%M  %d/%m"),
-                "AQI": f"{v:.0f}",
-                "Mức": f"{RECOMMENDATIONS[lvl]['icon']}  {AQI_LABELS[lvl]}",
+                "Sau":         f"+{h} giờ",
+                "Thời điểm":   f"{target_t.strftime('%H:%M')}  {day_lbl}",
+                "AQI dự báo":  f"{v:.0f}",
+                "Mức AQI":     f"{RECOMMENDATIONS[lvl]['icon']}  {AQI_LABELS[lvl]}",
             })
 
         def _color_row(row):
-            lvl = aqi_level(float(row["AQI"]))
+            lvl = aqi_level(float(row["AQI dự báo"]))
             return [f"background-color:{AQI_COLORS[lvl]};color:{AQI_TEXT_COLORS[lvl]}"]*len(row)
 
         st.dataframe(
@@ -983,12 +1027,12 @@ def main():
 
         mode = st.radio(
             "Chọn chế độ:",
-            ["📡 Dùng AQI dự báo t+1h", "✏️ Nhập AQI thủ công", "📖 Xem tất cả mức"],
+            ["📡 Dùng AQI dự báo (sau 1 giờ)", "✏️ Nhập AQI thủ công", "📖 Xem tất cả mức"],
             horizontal=True,
             label_visibility="collapsed",
         )
 
-        if mode == "📡 Dùng AQI dự báo t+1h":
+        if mode == "📡 Dùng AQI dự báo (sau 1 giờ)":
             try:
                 aqi_in = predictions[1]
             except Exception:
@@ -997,7 +1041,7 @@ def main():
             st.markdown(
                 f'<div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:10px;'
                 f'padding:12px 16px;margin-bottom:12px">'
-                f'📡 AQI dự báo t+1h của <b>{province_name}</b>: '
+                f'📡 AQI dự báo sau 1 giờ của <b>{province_name}</b>: '
                 f'{badge_html(aqi_in, "1.05rem")}</div>',
                 unsafe_allow_html=True,
             )
