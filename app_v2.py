@@ -1,7 +1,7 @@
 """
 AQI Forecast Web Demo — Miền Trung Việt Nam
 ===========================================
-Last version: Streamlit Cloud deploy với Service Account.
+Version cuối: fix tất cả lỗi + Streamlit Cloud deploy với Service Account.
 
 Cách deploy lên Streamlit Cloud:
   1. Push toàn bộ project lên GitHub (KHÔNG cần commit best_pca_models/)
@@ -9,6 +9,10 @@ Cách deploy lên Streamlit Cloud:
   3. Vào App settings → Secrets → dán nội dung secrets.toml (xem README)
   4. Deploy
 
+Cách chạy local:
+  1. Tạo file .streamlit/secrets.toml (xem README)
+  2. pip install -r requirements.txt
+  3. streamlit run app.py
 """
 
 from __future__ import annotations
@@ -32,6 +36,18 @@ warnings.filterwarnings("ignore")
 
 BASE_DIR       = Path(__file__).parent
 BEST_MODEL_DIR = BASE_DIR / "best_pca_models"
+
+# Múi giờ Việt Nam — UTC+7
+_VN_TZ = timezone(timedelta(hours=7))
+
+def vn_now() -> datetime:
+    """Giờ hiện tại theo giờ Việt Nam (UTC+7) — đúng cả local lẫn Streamlit Cloud."""
+    return datetime.now(tz=timezone.utc).astimezone(_VN_TZ)
+
+def vn_today() -> date:
+    """Ngày hôm nay theo giờ Việt Nam."""
+    return vn_now().date()
+
 
 TARGET      = "us_aqi"
 HORIZONS    = [1, 3, 6, 12, 24, 48, 72]
@@ -84,7 +100,7 @@ RECOMMENDATIONS = {
         "desc": "Chất lượng không khí tốt. Không ảnh hưởng tới sức khỏe.",
         "general": ["Thích hợp cho mọi hoạt động ngoài trời.",
                     "Thời điểm lý tưởng để tập thể dục, đi bộ, đạp xe."],
-        "sensitive": ["Nhóm dễ bị ảnh hưởng có thể hoạt động bình thường."],
+        "sensitive": ["Nhóm nhạy cảm có thể hoạt động bình thường."],
         "safe_hours": "✅ Tất cả các giờ trong ngày đều an toàn.",
         "activities": ["🏃 Chạy bộ / đi bộ ngoài trời", "🚴 Đạp xe",
                        "⚽ Thể thao ngoài trời", "🧘 Yoga ngoài trời", "🌳 Dã ngoại"],
@@ -103,7 +119,7 @@ RECOMMENDATIONS = {
     },
     2: {
         "icon": "🟠", "label_en": "Unhealthy for Sensitive",
-        "desc": "Chất lượng không khí kém. Có thể gây hại cho Nhóm dễ bị ảnh hưởng.",
+        "desc": "Chất lượng không khí kém. Có thể gây hại cho nhóm nhạy cảm.",
         "general": ["Giảm thời gian hoạt động ngoài trời.",
                     "Đóng cửa sổ, bật lọc không khí nếu có."],
         "sensitive": ["Người già, trẻ em, phụ nữ mang thai nên ở trong nhà.",
@@ -127,7 +143,7 @@ RECOMMENDATIONS = {
     },
     4: {
         "icon": "🟣", "label_en": "Very Unhealthy",
-        "desc": "Chất lượng không khí rất xấu. Khẩn cấp với Nhóm dễ bị ảnh hưởng.",
+        "desc": "Chất lượng không khí rất xấu. Khẩn cấp với nhóm nhạy cảm.",
         "general": ["Không ra ngoài trừ trường hợp khẩn cấp.",
                     "Dùng máy lọc không khí trong nhà liên tục."],
         "sensitive": ["Nguy hiểm — ở trong nhà hoàn toàn.",
@@ -284,7 +300,8 @@ def _last_sync_str() -> str:
     if not pkls:
         return "Chưa sync"
     ts = max(f.stat().st_mtime for f in pkls)
-    return datetime.fromtimestamp(ts).strftime("%H:%M %d/%m/%Y")
+    dt_vn = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(_VN_TZ)
+    return dt_vn.strftime("%H:%M %d/%m/%Y")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -427,7 +444,7 @@ CHART_LAYOUT = dict(
     plot_bgcolor="rgba(0,0,0,0)",
     paper_bgcolor="rgba(0,0,0,0)",
     font=dict(family="Inter, sans-serif", size=13),
-    # margin được set riêng ở từng hàm để tránh duplicate keyword với **CHART_LAYOUT
+    # margin set riêng ở từng hàm để tránh duplicate keyword
 )
 
 def render_gauge(value: float, province: str, ts_str: str) -> go.Figure:
@@ -486,7 +503,7 @@ def render_forecast_chart(predictions: dict) -> go.Figure:
     vals   = list(predictions.values())
     colors = [aqi_color(v) for v in vals]
     labels = [aqi_label(v) for v in vals]
-    now    = datetime.now()
+    now    = vn_now()  # UTC+7
 
     # X-axis: hiển thị giờ thực thay vì "t+Nh"
     def _x_label(h: int) -> str:
@@ -574,7 +591,7 @@ def render_forecast_chart(predictions: dict) -> go.Figure:
         showlegend=False,
         height=430,
         bargap=0.38,
-        margin=dict(l=10, r=75, t=45, b=10),  # r=75 để label ngưỡng bên phải không bị cắt
+        margin=dict(l=10, r=70, t=45, b=10),  # r=70 để label ngưỡng bên phải không bị cắt
     )
     return fig
 
@@ -670,7 +687,6 @@ def render_hourly_pattern(df: pd.DataFrame) -> go.Figure:
                    gridcolor="rgba(0,0,0,0.05)", tickfont=dict(size=11)),
         yaxis=dict(title="AQI", gridcolor="rgba(0,0,0,0.06)"),
         height=300,
-        margin=dict(l=10, r=10, t=45, b=10),
         legend=dict(orientation="h", x=0, y=1.08, font=dict(size=12)),
     )
     return fig
@@ -893,7 +909,7 @@ def build_daily_report_html(df: pd.DataFrame, province_name: str) -> str:
   <div style="background:#e8f4fd;border-left:4px solid #1565c0;border-radius:0 8px 8px 0;
               padding:10px 14px;margin-bottom:20px;font-size:0.87rem;color:#1a3a5c">
     📋 Báo cáo tổng hợp từ dữ liệu quan trắc thực tế (Open-Meteo CAMS Global).
-    Giá trị AQI có thể thay đổi so với các ngày trước vì dữ liệu được cập nhật theo thực tế.
+    Giá trị AQI có thể thay đổi so với các ngày trước vì dữ liệu được cập nhật liên tục theo thực tế.
   </div>
   {cards_html}
 </div>"""
@@ -1037,6 +1053,20 @@ def main():
                     else:
                         st.warning(msg)
 
+            with st.expander("📖 Hướng dẫn Setup Drive", expanded=False):
+                st.markdown("""
+**1. Tạo Service Account:**
+- Google Cloud Console → IAM → Service Accounts → Create
+- Tạo JSON key → Download
+
+**2. Share folder Drive:**
+- Mở thư mục `best_pca_models` trên Drive
+- Share với email Service Account (viewer)
+
+**3. Cấu hình secrets:**
+*Local* — Tạo `.streamlit/secrets.toml'
+*Streamlit Cloud* → App Settings → Secrets → dán nội dung trên.
+                """)
         else:
             st.warning("⚠️ Chưa cấu hình Service Account.\nDùng model local.")
             st.markdown(f"📂 `best_pca_models/`")
@@ -1053,6 +1083,13 @@ def main():
             st.markdown(f"""
             <div style="background:#f0f4ff;border-radius:10px;padding:10px 14px;
                         margin-top:8px;font-size:0.83rem">
+              ✅ <b>Model đã sẵn sàng</b><br>
+              <table style="margin-top:6px;width:100%">
+                <tr><td style="color:#555">Algorithm</td><td><b>{info.get('model_name','N/A')}</b></td></tr>
+                <tr><td style="color:#555">n PC</td><td>{info.get('n_comp','N/A')}</td></tr>
+                <tr><td style="color:#555">RMSE (test)</td><td>{info.get('test_rmse_avg','N/A')}</td></tr>
+                <tr><td style="color:#555">WLA (test)</td><td>{info.get('test_wla_avg','N/A')}%</td></tr>
+              </table>
             </div>""", unsafe_allow_html=True)
         else:
             st.markdown("""
@@ -1069,7 +1106,7 @@ def main():
         st.markdown('<div class="main-title">🌬️ Dự báo Chất lượng Không khí</div>',
                     unsafe_allow_html=True)
         # Khoảng dữ liệu đầu vào (5 ngày gần nhất đến hôm nay)
-        _d_end   = date.today()
+        _d_end   = vn_today()
         _d_start = _d_end - timedelta(days=5)
         _range_str = f"{_d_start.strftime('%d/%m')} – {_d_end.strftime('%d/%m/%Y')}"
         st.markdown(
@@ -1098,7 +1135,7 @@ def main():
             st.error("Không load được model. Kiểm tra artifacts hoặc sync từ Drive.")
             st.stop()
 
-        today = date.today()
+        today = vn_today()
         with st.spinner(f"Đang lấy dữ liệu {province_name}..."):
             df_raw = fetch_openmeteo(lat, lon, tz,
                                      (today - timedelta(days=5)).isoformat(),
@@ -1176,7 +1213,7 @@ def main():
         st.plotly_chart(render_forecast_chart(predictions), use_container_width=True)
 
         # Bảng chi tiết
-        now_ts = datetime.now()
+        now_ts = vn_now()  # UTC+7
         rows   = []
         for h, v in predictions.items():
             lvl      = aqi_level(v)
@@ -1207,7 +1244,7 @@ def main():
             '<div style="background:#e3f2fd;border-left:4px solid #1565c0;'
             'padding:10px 14px;border-radius:0 8px 8px 0;font-size:0.88rem;margin-top:10px">'
             '💡 <b>Lưu ý:</b> Dự báo dựa trên dữ liệu CAMS Global (Open-Meteo) và mô hình ML '
-            'huấn luyện trên dữ liệu 2022–2024. Độ chính xác của dự đoán giảm dần theo thời gian.</div>',
+            'huấn luyện trên dữ liệu 2022–2024. Độ chính xác giảm dần theo chân trời xa.</div>',
             unsafe_allow_html=True,
         )
 
@@ -1270,7 +1307,7 @@ def main():
     with tab3:
         st.markdown("### 📅 Lịch sử AQI 3 ngày gần nhất")
 
-        today = date.today()
+        today = vn_today()
         with st.spinner("Đang tải dữ liệu lịch sử..."):
             df_hist = fetch_openmeteo(lat, lon, tz,
                                       (today - timedelta(days=4)).isoformat(),
@@ -1344,7 +1381,7 @@ def main():
             "Dữ liệu lấy từ 7 ngày gần nhất."
         )
 
-        today = date.today()
+        today = vn_today()
         with st.spinner("Đang tải dữ liệu báo cáo..."):
             df_report = fetch_openmeteo(
                 lat, lon, tz,
@@ -1388,24 +1425,15 @@ def main():
             else:
                 df_filtered = df_report[df_report["time"].dt.date.isin(selected_dates)]
                 html_report = build_daily_report_html(df_filtered, province_name)
-
-                # st.markdown không render được CSS grid/complex HTML
-                # → dùng st.components.v1.html() để render trong iframe
                 import streamlit.components.v1 as components
-
-                # Ước tính chiều cao: ~520px/ngày
                 estimated_height = max(520 * len(selected_dates) + 120, 600)
                 components.html(
                     f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
-      rel="stylesheet">
-<style>
-  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{ font-family: 'Inter', sans-serif; background: transparent; padding: 0 2px; }}
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>* {{ box-sizing: border-box; margin: 0; padding: 0; }} body {{ font-family: 'Inter', sans-serif; background: transparent; padding: 0 2px; }}</style>
 </head>
 <body>{html_report}</body>
 </html>""",
@@ -1414,18 +1442,5 @@ def main():
                 )
 
 
-if __name__ == "__main__":
-    try:
-        main()
-    except Exception as _e:
-        import traceback
-        st.error(f"❌ App crash: {_e}")
-        st.code(traceback.format_exc())
-# Streamlit Cloud runs the script directly — gọi main() ở module level
-else:
-    try:
-        main()
-    except Exception as _top_e:
-        import traceback as _tb
-        st.error(f'❌ Startup error: {_top_e}')
-        st.code(_tb.format_exc())
+
+    main()
