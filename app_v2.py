@@ -1,7 +1,7 @@
 """
 AQI Forecast Web Demo — Miền Trung Việt Nam
 ===========================================
-Version cuối: fix tất cả lỗi + Streamlit Cloud deploy với Service Account.
+Last version: Streamlit Cloud deploy với Service Account.
 
 Cách deploy lên Streamlit Cloud:
   1. Push toàn bộ project lên GitHub (KHÔNG cần commit best_pca_models/)
@@ -9,10 +9,6 @@ Cách deploy lên Streamlit Cloud:
   3. Vào App settings → Secrets → dán nội dung secrets.toml (xem README)
   4. Deploy
 
-Cách chạy local:
-  1. Tạo file .streamlit/secrets.toml (xem README)
-  2. pip install -r requirements.txt
-  3. streamlit run app.py
 """
 
 from __future__ import annotations
@@ -88,7 +84,7 @@ RECOMMENDATIONS = {
         "desc": "Chất lượng không khí tốt. Không ảnh hưởng tới sức khỏe.",
         "general": ["Thích hợp cho mọi hoạt động ngoài trời.",
                     "Thời điểm lý tưởng để tập thể dục, đi bộ, đạp xe."],
-        "sensitive": ["Nhóm nhạy cảm có thể hoạt động bình thường."],
+        "sensitive": ["Nhóm dễ bị ảnh hưởng có thể hoạt động bình thường."],
         "safe_hours": "✅ Tất cả các giờ trong ngày đều an toàn.",
         "activities": ["🏃 Chạy bộ / đi bộ ngoài trời", "🚴 Đạp xe",
                        "⚽ Thể thao ngoài trời", "🧘 Yoga ngoài trời", "🌳 Dã ngoại"],
@@ -107,7 +103,7 @@ RECOMMENDATIONS = {
     },
     2: {
         "icon": "🟠", "label_en": "Unhealthy for Sensitive",
-        "desc": "Chất lượng không khí kém. Có thể gây hại cho nhóm nhạy cảm.",
+        "desc": "Chất lượng không khí kém. Có thể gây hại cho Nhóm dễ bị ảnh hưởng.",
         "general": ["Giảm thời gian hoạt động ngoài trời.",
                     "Đóng cửa sổ, bật lọc không khí nếu có."],
         "sensitive": ["Người già, trẻ em, phụ nữ mang thai nên ở trong nhà.",
@@ -131,7 +127,7 @@ RECOMMENDATIONS = {
     },
     4: {
         "icon": "🟣", "label_en": "Very Unhealthy",
-        "desc": "Chất lượng không khí rất xấu. Khẩn cấp với nhóm nhạy cảm.",
+        "desc": "Chất lượng không khí rất xấu. Khẩn cấp với Nhóm dễ bị ảnh hưởng.",
         "general": ["Không ra ngoài trừ trường hợp khẩn cấp.",
                     "Dùng máy lọc không khí trong nhà liên tục."],
         "sensitive": ["Nguy hiểm — ở trong nhà hoàn toàn.",
@@ -897,7 +893,7 @@ def build_daily_report_html(df: pd.DataFrame, province_name: str) -> str:
   <div style="background:#e8f4fd;border-left:4px solid #1565c0;border-radius:0 8px 8px 0;
               padding:10px 14px;margin-bottom:20px;font-size:0.87rem;color:#1a3a5c">
     📋 Báo cáo tổng hợp từ dữ liệu quan trắc thực tế (Open-Meteo CAMS Global).
-    Giá trị AQI có thể thay đổi so với các ngày trước vì dữ liệu được cập nhật liên tục theo thực tế.
+    Giá trị AQI có thể thay đổi so với các ngày trước vì dữ liệu được cập nhật theo thực tế.
   </div>
   {cards_html}
 </div>"""
@@ -933,7 +929,7 @@ def render_recommendations(level: int):
     with c1:
         st.markdown("**📋 Khuyến nghị chung**")
         for item in rec["general"]:   st.markdown(f"• {item}")
-        st.markdown("**⚠️ Nhóm nhạy cảm**")
+        st.markdown("**⚠️ Nhóm dễ bị ảnh hưởng**")
         for item in rec["sensitive"]: st.markdown(f"• {item}")
         if rec["avoid"]:
             st.markdown("**🚫 Cần tránh**")
@@ -1057,13 +1053,6 @@ def main():
             st.markdown(f"""
             <div style="background:#f0f4ff;border-radius:10px;padding:10px 14px;
                         margin-top:8px;font-size:0.83rem">
-              ✅ <b>Model đã sẵn sàng</b><br>
-              <table style="margin-top:6px;width:100%">
-                <tr><td style="color:#555">Algorithm</td><td><b>{info.get('model_name','N/A')}</b></td></tr>
-                <tr><td style="color:#555">n PC</td><td>{info.get('n_comp','N/A')}</td></tr>
-                <tr><td style="color:#555">RMSE (test)</td><td>{info.get('test_rmse_avg','N/A')}</td></tr>
-                <tr><td style="color:#555">WLA (test)</td><td>{info.get('test_wla_avg','N/A')}%</td></tr>
-              </table>
             </div>""", unsafe_allow_html=True)
         else:
             st.markdown("""
@@ -1218,7 +1207,7 @@ def main():
             '<div style="background:#e3f2fd;border-left:4px solid #1565c0;'
             'padding:10px 14px;border-radius:0 8px 8px 0;font-size:0.88rem;margin-top:10px">'
             '💡 <b>Lưu ý:</b> Dự báo dựa trên dữ liệu CAMS Global (Open-Meteo) và mô hình ML '
-            'huấn luyện trên dữ liệu 2022–2024. Độ chính xác giảm dần theo chân trời xa.</div>',
+            'huấn luyện trên dữ liệu 2022–2024. Độ chính xác của dự đoán giảm dần theo thời gian.</div>',
             unsafe_allow_html=True,
         )
 
