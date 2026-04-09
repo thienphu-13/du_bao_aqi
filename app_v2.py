@@ -1413,7 +1413,30 @@ def main():
             else:
                 df_filtered = df_report[df_report["time"].dt.date.isin(selected_dates)]
                 html_report = build_daily_report_html(df_filtered, province_name)
-                st.markdown(html_report, unsafe_allow_html=True)
+
+                # st.markdown không render được CSS grid/complex HTML
+                # → dùng st.components.v1.html() để render trong iframe
+                import streamlit.components.v1 as components
+
+                # Ước tính chiều cao: ~520px/ngày
+                estimated_height = max(520 * len(selected_dates) + 120, 600)
+                components.html(
+                    f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
+      rel="stylesheet">
+<style>
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  body {{ font-family: 'Inter', sans-serif; background: transparent; padding: 0 2px; }}
+</style>
+</head>
+<body>{html_report}</body>
+</html>""",
+                    height=estimated_height,
+                    scrolling=True,
+                )
 
 
 if __name__ == "__main__":
