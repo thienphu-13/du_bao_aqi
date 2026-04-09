@@ -1040,7 +1040,7 @@ def main():
                         load_artifacts.clear()
                     else:
                         st.warning(msg)
-
+'''
             with st.expander("📖 Hướng dẫn Setup Drive", expanded=False):
                 st.markdown("""
 **1. Tạo Service Account:**
@@ -1058,7 +1058,7 @@ def main():
         else:
             st.warning("⚠️ Chưa cấu hình Service Account.\nDùng model local.")
             st.markdown(f"📂 `best_pca_models/`")
-
+'''
         # ── Data refresh ───────────────────────────────────────────────────
         st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
         if st.button("🔄 Làm mới dữ liệu AQI", use_container_width=True):
