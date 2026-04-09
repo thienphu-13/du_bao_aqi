@@ -15,6 +15,7 @@ Cách chạy local:
   3. streamlit run app.py
 """
 
+from __future__ import annotations
 import io, os, json, time, warnings
 from datetime import date, timedelta, datetime, timezone
 from pathlib import Path
@@ -997,7 +998,10 @@ def main():
         st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
         st.markdown("**☁️ Google Drive Sync**")
 
-        has_sa = "gcp_service_account" in st.secrets
+        try:
+            has_sa = "gcp_service_account" in st.secrets
+        except Exception:
+            has_sa = False
 
         if has_sa:
             # Auto-sync khi mở app (1 lần mỗi session)
