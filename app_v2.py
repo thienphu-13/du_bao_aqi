@@ -1040,25 +1040,11 @@ def main():
                         load_artifacts.clear()
                     else:
                         st.warning(msg)
-'''
-            with st.expander("📖 Hướng dẫn Setup Drive", expanded=False):
-                st.markdown("""
-**1. Tạo Service Account:**
-- Google Cloud Console → IAM → Service Accounts → Create
-- Tạo JSON key → Download
 
-**2. Share folder Drive:**
-- Mở thư mục `best_pca_models` trên Drive
-- Share với email Service Account (viewer)
-
-**3. Cấu hình secrets:**
-*Local* — Tạo `.streamlit/secrets.toml'
-*Streamlit Cloud* → App Settings → Secrets → dán nội dung trên.
-                """)
         else:
             st.warning("⚠️ Chưa cấu hình Service Account.\nDùng model local.")
             st.markdown(f"📂 `best_pca_models/`")
-'''
+
         # ── Data refresh ───────────────────────────────────────────────────
         st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
         if st.button("🔄 Làm mới dữ liệu AQI", use_container_width=True):
