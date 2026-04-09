@@ -431,7 +431,7 @@ CHART_LAYOUT = dict(
     plot_bgcolor="rgba(0,0,0,0)",
     paper_bgcolor="rgba(0,0,0,0)",
     font=dict(family="Inter, sans-serif", size=13),
-    margin=dict(l=10, r=10, t=45, b=10),
+    # margin được set riêng ở từng hàm để tránh duplicate keyword với **CHART_LAYOUT
 )
 
 def render_gauge(value: float, province: str, ts_str: str) -> go.Figure:
@@ -578,7 +578,7 @@ def render_forecast_chart(predictions: dict) -> go.Figure:
         showlegend=False,
         height=430,
         bargap=0.38,
-        margin=dict(l=10, r=70, t=45, b=10),  # r=70 để label ngưỡng bên phải không bị cắt
+        margin=dict(l=10, r=75, t=45, b=10),  # r=75 để label ngưỡng bên phải không bị cắt
     )
     return fig
 
@@ -674,6 +674,7 @@ def render_hourly_pattern(df: pd.DataFrame) -> go.Figure:
                    gridcolor="rgba(0,0,0,0.05)", tickfont=dict(size=11)),
         yaxis=dict(title="AQI", gridcolor="rgba(0,0,0,0.06)"),
         height=300,
+        margin=dict(l=10, r=10, t=45, b=10),
         legend=dict(orientation="h", x=0, y=1.08, font=dict(size=12)),
     )
     return fig
