@@ -542,16 +542,27 @@ def render_forecast_chart(predictions: dict) -> go.Figure:
             borderpad=2,
         )
 
-    # Đường ngưỡng
+    # Đường ngưỡng — label đặt bên PHẢI chart, tránh đè bar
     for thr, lbl, col in [
-        (50,  "Tốt",     "#009a00"),
-        (100, "T.Bình",  "#b8a000"),
-        (150, "Kém",     "#c05a00"),
-        (200, "Xấu",     "#aa0000"),
+        (50,  "Tốt",      "#009a00"),
+        (100, "Trung bình","#b8a000"),
+        (150, "Kém",      "#c05a00"),
+        (200, "Xấu",      "#aa0000"),
     ]:
-        fig.add_hline(y=thr, line_dash="dot", line_color=col, line_width=1.2,
-                      annotation_text=lbl, annotation_position="left",
-                      annotation_font=dict(color=col, size=10))
+        # Đường kẻ ngang (không có annotation text)
+        fig.add_hline(y=thr, line_dash="dot", line_color=col, line_width=1.2)
+        # Annotation text gắn sát mép PHẢI của chart
+        fig.add_annotation(
+            x=1, xref="paper",
+            y=thr, yref="y",
+            text=f"<b>{lbl}</b>",
+            showarrow=False,
+            xanchor="left",
+            xshift=6,
+            font=dict(color=col, size=10),
+            bgcolor="rgba(255,255,255,0.85)",
+            borderpad=2,
+        )
 
     fig.update_layout(
         **CHART_LAYOUT,
@@ -566,6 +577,7 @@ def render_forecast_chart(predictions: dict) -> go.Figure:
         showlegend=False,
         height=430,
         bargap=0.38,
+        margin=dict(l=10, r=70, t=45, b=10),  # r=70 để label ngưỡng bên phải không bị cắt
     )
     return fig
 
@@ -688,6 +700,205 @@ def render_pie(counts: pd.Series) -> go.Figure:
     )
     return fig
 
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 6b. BÁO CÁO THEO NGÀY — HTML GENERATOR
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _slot_aqi(df_day: pd.DataFrame, hour: int) -> tuple:
+    """AQI tại giờ gần nhất với `hour` trong ngày."""
+    sub = df_day[df_day["time"].dt.hour == hour]
+    if sub.empty or sub[TARGET].isna().all():
+        return None, None
+    val = float(sub[TARGET].dropna().iloc[-1])
+    return val, aqi_level(val)
+
+
+def _level_bar(level: int, pct: float) -> str:
+    color = AQI_COLORS[level]
+    return (
+        f'<div style="display:flex;align-items:center;gap:6px">'
+        f'<div style="flex:1;background:#eee;border-radius:4px;height:7px">'
+        f'<div style="width:{min(pct,100):.0f}%;background:{color};'
+        f'border-radius:4px;height:7px"></div></div>'
+        f'<span style="font-size:0.78rem;color:#666;min-width:34px">{pct:.0f}%</span>'
+        f'</div>'
+    )
+
+
+def build_daily_report_html(df: pd.DataFrame, province_name: str) -> str:
+    """
+    HTML báo cáo tóm tắt từng ngày.
+    Render bằng st.markdown(..., unsafe_allow_html=True) — không cần file riêng.
+    """
+    df = df.copy()
+    df = df[df[TARGET].notna()].copy()
+    df["_date"] = df["time"].dt.date
+    days = sorted(df["_date"].unique(), reverse=True)   # mới nhất trước
+
+    KEY_SLOTS = [
+        (6,  "Sáng sớm",  "🌅"),
+        (9,  "Buổi sáng", "☀️"),
+        (12, "Buổi trưa", "🌞"),
+        (15, "Chiều",     "🌤️"),
+        (18, "Chiều tối", "🌆"),
+        (21, "Tối",       "🌙"),
+    ]
+    WEEKDAYS = ["Thứ Hai","Thứ Ba","Thứ Tư","Thứ Năm","Thứ Sáu","Thứ Bảy","Chủ Nhật"]
+
+    cards_html = ""
+
+    for d in days:
+        df_day = df[df["_date"] == d].copy()
+        if df_day.empty:
+            continue
+
+        aqi_vals  = df_day[TARGET].dropna()
+        mean_aqi  = aqi_vals.mean()
+        max_aqi   = aqi_vals.max()
+        min_aqi   = aqi_vals.min()
+        dom_lvl   = aqi_level(mean_aqi)
+        hdr_bg    = AQI_COLORS[dom_lvl]
+        hdr_tc    = AQI_TEXT_COLORS[dom_lvl]
+
+        idx_max   = df_day[TARGET].idxmax()
+        idx_min   = df_day[TARGET].idxmin()
+        hr_worst  = df_day.loc[idx_max, "time"].strftime("%H:%M") if idx_max is not None else "—"
+        hr_best   = df_day.loc[idx_min, "time"].strftime("%H:%M") if idx_min is not None else "—"
+
+        pm25_mean  = df_day["pm2_5"].mean()             if "pm2_5"                in df_day.columns else None
+        temp_mean  = df_day["temperature_2m"].mean()    if "temperature_2m"       in df_day.columns else None
+        humid_mean = df_day["relative_humidity_2m"].mean() if "relative_humidity_2m" in df_day.columns else None
+        wind_mean  = df_day["wind_speed_10m"].mean()    if "wind_speed_10m"       in df_day.columns else None
+
+        level_dist = df_day[TARGET].apply(aqi_level).value_counts(normalize=True) * 100
+
+        d_dt      = datetime.combine(d, datetime.min.time())
+        date_str  = f"{WEEKDAYS[d_dt.weekday()]}, {d.strftime('%d/%m/%Y')}"
+
+        # ── Mốc giờ ─────────────────────────────────────────────
+        slots_html = ""
+        for hr, lbl, icon in KEY_SLOTS:
+            val, lvl = _slot_aqi(df_day, hr)
+            if val is None:
+                slots_html += (
+                    f'<div style="text-align:center;padding:6px 2px">'
+                    f'<div style="font-size:0.68rem;color:#aaa">{icon}<br>{lbl}</div>'
+                    f'<div style="font-size:0.8rem;color:#ccc;margin-top:4px">—</div></div>'
+                )
+            else:
+                bg = AQI_COLORS[lvl]; tc = AQI_TEXT_COLORS[lvl]
+                slots_html += (
+                    f'<div style="text-align:center;padding:6px 2px">'
+                    f'<div style="font-size:0.68rem;color:#666;margin-bottom:4px">'
+                    f'{icon}<br>{lbl}</div>'
+                    f'<div style="background:{bg};color:{tc};border-radius:8px;'
+                    f'padding:4px 2px;font-weight:800;font-size:0.95rem">{val:.0f}</div>'
+                    f'<div style="font-size:0.65rem;color:#888;margin-top:2px">'
+                    f'{AQI_LABELS[lvl]}</div></div>'
+                )
+
+        # ── Phân bố ─────────────────────────────────────────────
+        dist_html = ""
+        for lvl_i in sorted(level_dist.index):
+            pct = level_dist[lvl_i]
+            dist_html += (
+                f'<div style="margin-bottom:6px">'
+                f'<div style="display:flex;justify-content:space-between;'
+                f'font-size:0.78rem;margin-bottom:2px">'
+                f'<span>{RECOMMENDATIONS[lvl_i]["icon"]} {AQI_LABELS[lvl_i]}</span>'
+                f'</div>' + _level_bar(lvl_i, pct) + '</div>'
+            )
+
+        # ── Số liệu ─────────────────────────────────────────────
+        def _fmt(v, fmt, unit):
+            return f"{v:{fmt}} {unit}" if (v is not None and not np.isnan(v)) else "—"
+
+        env_rows = [
+            ("🌡️ Nhiệt độ TB",  _fmt(temp_mean,  ".1f", "°C")),
+            ("💧 Độ ẩm TB",     _fmt(humid_mean, ".0f", "%")),
+            ("🔬 PM2.5 TB",     _fmt(pm25_mean,  ".1f", "µg/m³")),
+            ("💨 Gió TB",       _fmt(wind_mean,  ".1f", "km/h")),
+        ]
+        env_html = "".join(
+            f'<tr style="border-bottom:1px solid #f5f5f5">'
+            f'<td style="padding:5px 0;color:#777;font-size:0.83rem">{k}</td>'
+            f'<td style="padding:5px 0;text-align:right;font-weight:700;font-size:0.83rem">{v}</td>'
+            f'</tr>'
+            for k, v in env_rows
+        )
+        rec_short = RECOMMENDATIONS[dom_lvl]["safe_hours"]
+
+        cards_html += f"""
+<div style="border:1px solid #e0e7f0;border-radius:14px;overflow:hidden;
+            margin-bottom:22px;box-shadow:0 2px 10px rgba(0,0,0,0.06)">
+
+  <!-- Header -->
+  <div style="background:{hdr_bg};color:{hdr_tc};padding:13px 20px;
+              display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <div>
+      <div style="font-size:1.05rem;font-weight:800">
+        {RECOMMENDATIONS[dom_lvl]["icon"]} {date_str}
+      </div>
+      <div style="font-size:0.84rem;margin-top:2px;opacity:0.9">
+        {province_name} &nbsp;·&nbsp; AQI trung bình:
+        <span style="font-weight:900;font-size:1.05rem">{mean_aqi:.0f}</span>
+        — <b>{AQI_LABELS[dom_lvl]}</b>
+      </div>
+    </div>
+    <div style="font-size:0.82rem;opacity:0.88;text-align:right">
+      <div>📈 Cao nhất <b>{max_aqi:.0f}</b> lúc {hr_worst}</div>
+      <div>📉 Thấp nhất <b>{min_aqi:.0f}</b> lúc {hr_best}</div>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div style="padding:16px 20px;background:#fff">
+
+    <!-- Mốc giờ -->
+    <div style="font-size:0.75rem;font-weight:700;color:#888;text-transform:uppercase;
+                letter-spacing:0.06em;margin-bottom:8px">AQI tại các mốc thời gian</div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);
+                gap:4px;margin-bottom:18px;border:1px solid #f0f0f0;
+                border-radius:10px;padding:10px">
+      {slots_html}
+    </div>
+
+    <!-- 2 cột -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+
+      <div>
+        <div style="font-size:0.75rem;font-weight:700;color:#888;text-transform:uppercase;
+                    letter-spacing:0.06em;margin-bottom:8px">Phân bố chất lượng KK</div>
+        {dist_html}
+      </div>
+
+      <div>
+        <div style="font-size:0.75rem;font-weight:700;color:#888;text-transform:uppercase;
+                    letter-spacing:0.06em;margin-bottom:8px">Điều kiện môi trường</div>
+        <table style="width:100%;border-collapse:collapse">{env_html}</table>
+        <div style="margin-top:10px;background:#f8fafd;border-radius:8px;
+                    padding:8px 10px;font-size:0.8rem;color:#555;border-left:3px solid {hdr_bg}">
+          ⏰ {rec_short}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>"""
+
+    if not cards_html:
+        return "<p style='color:#999;padding:20px'>Không có dữ liệu.</p>"
+
+    return f"""<div style="font-family:'Inter',sans-serif;max-width:100%">
+  <div style="background:#e8f4fd;border-left:4px solid #1565c0;border-radius:0 8px 8px 0;
+              padding:10px 14px;margin-bottom:20px;font-size:0.87rem;color:#1a3a5c">
+    📋 Báo cáo tổng hợp từ dữ liệu quan trắc thực tế (Open-Meteo CAMS Global).
+    Giá trị AQI có thể thay đổi so với các ngày trước vì dữ liệu được cập nhật liên tục theo thực tế.
+  </div>
+  {cards_html}
+</div>"""
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -892,10 +1103,11 @@ def main():
 
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-    tab1, tab2, tab3 = st.tabs([
+    tab1, tab2, tab3, tab4 = st.tabs([
         "📡 Dự báo Realtime",
         "📊 Phân loại & Khuyến nghị",
         "📅 Lịch sử 3 ngày",
+        "📋 Báo cáo theo ngày",
     ])
 
     # ═════════════════════════════════════════════════════════════════════════
@@ -1141,5 +1353,63 @@ def main():
         )
 
 
-if __name__ == "__main__":
+    # ═════════════════════════════════════════════════════════════════════════
+    # TAB 4 — BÁO CÁO THEO NGÀY
+    # ═════════════════════════════════════════════════════════════════════════
+    with tab4:
+        st.markdown("### 📋 Báo cáo AQI theo ngày")
+        st.caption(
+            "Tóm tắt chất lượng không khí từng ngày: AQI theo mốc giờ, "
+            "phân bố mức độ, và điều kiện môi trường. "
+            "Dữ liệu lấy từ 7 ngày gần nhất."
+        )
+
+        today = date.today()
+        with st.spinner("Đang tải dữ liệu báo cáo..."):
+            df_report = fetch_openmeteo(
+                lat, lon, tz,
+                (today - timedelta(days=7)).isoformat(),
+                today.isoformat(),
+            )
+
+        if df_report is None:
+            st.error("Không lấy được dữ liệu. Thử lại sau.")
+        else:
+            df_report = impute_df(df_report.copy())
+
+            # Bộ lọc ngày
+            all_dates = sorted(df_report["time"].dt.date.unique(), reverse=True)
+            col_f1, col_f2 = st.columns([2, 1])
+            with col_f1:
+                selected_dates = st.multiselect(
+                    "Chọn ngày hiển thị:",
+                    options=all_dates,
+                    default=all_dates[:4],   # mặc định 4 ngày gần nhất
+                    format_func=lambda d: d.strftime("%A, %d/%m/%Y").replace(
+                        "Monday","Thứ Hai").replace("Tuesday","Thứ Ba"
+                        ).replace("Wednesday","Thứ Tư").replace("Thursday","Thứ Năm"
+                        ).replace("Friday","Thứ Sáu").replace("Saturday","Thứ Bảy"
+                        ).replace("Sunday","Chủ Nhật"),
+                )
+            with col_f2:
+                st.markdown("")
+                if st.button("📄 Tải báo cáo CSV", use_container_width=True):
+                    csv_rpt = df_report[["time", TARGET, "pm2_5", "temperature_2m",
+                                          "relative_humidity_2m", "wind_speed_10m"]].to_csv(index=False)
+                    st.download_button(
+                        "⬇️ Download",
+                        data=csv_rpt,
+                        file_name=f"report_{slug}_{today}.csv",
+                        mime="text/csv",
+                    )
+
+            if not selected_dates:
+                st.info("Chọn ít nhất một ngày để xem báo cáo.")
+            else:
+                df_filtered = df_report[df_report["time"].dt.date.isin(selected_dates)]
+                html_report = build_daily_report_html(df_filtered, province_name)
+                st.markdown(html_report, unsafe_allow_html=True)
+
+
+
     main()
