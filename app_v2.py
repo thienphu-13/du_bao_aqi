@@ -1415,5 +1415,18 @@ def main():
                 st.markdown(html_report, unsafe_allow_html=True)
 
 
-
-    main()
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as _e:
+        import traceback
+        st.error(f"❌ App crash: {_e}")
+        st.code(traceback.format_exc())
+# Streamlit Cloud runs the script directly — gọi main() ở module level
+else:
+    try:
+        main()
+    except Exception as _top_e:
+        import traceback as _tb
+        st.error(f'❌ Startup error: {_top_e}')
+        st.code(_tb.format_exc())
