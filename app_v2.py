@@ -1062,29 +1062,7 @@ def main():
         if st.button("🔄 Làm mới dữ liệu AQI", use_container_width=True):
             st.cache_data.clear(); st.rerun()
 
-        # ── Model info ─────────────────────────────────────────────────────
         arts = load_artifacts(slug)
-        if arts:
-            info = arts["info"]
-            st.markdown(f"""
-            <div style="background:#f0f4ff;border-radius:10px;padding:10px 14px;
-                        margin-top:8px;font-size:0.83rem">
-              ✅ <b>Model đã sẵn sàng</b><br>
-              <table style="margin-top:6px;width:100%">
-                <tr><td style="color:#555">Algorithm</td><td><b>{info.get('model_name','N/A')}</b></td></tr>
-                <tr><td style="color:#555">n PC</td><td>{info.get('n_comp','N/A')}</td></tr>
-                <tr><td style="color:#555">RMSE (test)</td><td>{info.get('test_rmse_avg','N/A')}</td></tr>
-                <tr><td style="color:#555">WLA (test)</td><td>{info.get('test_wla_avg','N/A')}%</td></tr>
-              </table>
-            </div>""", unsafe_allow_html=True)
-        else:
-            st.markdown("""
-            <div style="background:#fff3e0;border-radius:10px;padding:10px 14px;
-                        font-size:0.83rem;color:#e65100">
-              ❌ Chưa có model artifacts.<br>
-              Chạy sync hoặc copy thư mục<br>
-              <code>best_pca_models/</code> vào thư mục app.
-            </div>""", unsafe_allow_html=True)
 
     # ── HEADER ─────────────────────────────────────────────────────────────────
     col_h1, col_h2 = st.columns([3, 1])
@@ -1423,7 +1401,6 @@ def main():
 <body>{html_report}</body>
 </html>""",
                     height=estimated_height,
-                    scrolling=True,
                 )
 
 
