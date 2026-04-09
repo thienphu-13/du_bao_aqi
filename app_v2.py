@@ -1204,7 +1204,7 @@ def main():
             '<div style="background:#e3f2fd;border-left:4px solid #1565c0;'
             'padding:10px 14px;border-radius:0 8px 8px 0;font-size:0.88rem;margin-top:10px">'
             '💡 <b>Lưu ý:</b> Dự báo dựa trên dữ liệu CAMS Global (Open-Meteo) và mô hình ML '
-            'huấn luyện trên dữ liệu 2022–2024. Độ chính xác giảm dần theo chân trời xa.</div>',
+            'huấn luyện trên dữ liệu 2022–2024. Độ chính xác giảm dần theo thời gian.</div>',
             unsafe_allow_html=True,
         )
 
