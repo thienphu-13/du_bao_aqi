@@ -185,7 +185,7 @@ RECOMMENDATIONS = {
     },
     2: {
         "icon": "🟠", "label_en": "Unhealthy for Sensitive",
-        "desc": "Chất lượng không khí kém. Có thể gây hại cho nhóm nhạy cảm.",
+        "desc": "Chất lượng không khí kém. Có thể gây hại cho nhóm dễ bị ảnh hưởng.",
         "general": ["Giảm thời gian hoạt động ngoài trời.",
                     "Đóng cửa sổ, bật lọc không khí nếu có."],
         "sensitive": ["Người già, trẻ em, phụ nữ mang thai nên ở trong nhà.",
@@ -1147,7 +1147,7 @@ def main():
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "📡 Dự báo Realtime",
+        "📡 Dự báo theo thời gian",
         "📊 Phân loại & Khuyến nghị",
         "📅 Lịch sử gần đây",
         "📋 Báo cáo theo ngày",
