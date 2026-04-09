@@ -1427,5 +1427,10 @@ def main():
                 )
 
 
-
+# Entry point — module level (0 indent)
+try:
     main()
+except Exception as _e:
+    import traceback as _tb
+    st.error(f"❌ Lỗi khởi động: {_e}")
+    st.code(_tb.format_exc())
