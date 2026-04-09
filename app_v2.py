@@ -61,6 +61,76 @@ AQI_RGBA        = [           # rgba tương ứng dùng cho fillcolor Plotly
 ]
 AQI_TEXT_COLORS = ["#000", "#000", "#000", "#fff", "#fff", "#fff"]
 
+# Ngưỡng an toàn WHO 2021 và QCVN 05:2023 (24h avg, µg/m³)
+POLLUTANT_THRESHOLDS = {
+    "pm2_5":             {"who": 15,  "vn": 25,  "unit": "µg/m³", "name": "PM2.5"},
+    "pm10":              {"who": 45,  "vn": 50,  "unit": "µg/m³", "name": "PM10"},
+    "nitrogen_dioxide":  {"who": 25,  "vn": 100, "unit": "µg/m³", "name": "NO₂"},
+    "ozone":             {"who": 100, "vn": 120, "unit": "µg/m³", "name": "O₃"},
+    "sulphur_dioxide":   {"who": 40,  "vn": 350, "unit": "µg/m³", "name": "SO₂"},
+    "carbon_monoxide":   {"who": 4000,"vn":10000, "unit": "µg/m³", "name": "CO"},
+}
+
+# Kết quả tổng hợp các mô hình (PCA 95%) — dùng cho tab tổng hợp
+MODEL_SUMMARY = {
+    "thanh_hoa": {
+        "name": "Thanh Hóa", "best": "CatBoost", "n_pc": 18,
+        "models": [
+            ("LinearRegression", 18.52, 67.8), ("Ridge",      18.48, 68.1),
+            ("Lasso",           18.61, 67.3),  ("DecisionTree",22.14, 58.9),
+            ("RandomForest",    16.83, 71.2),  ("ExtraTrees",  16.91, 71.0),
+            ("GradientBoosting",15.87, 73.4),  ("XGBoost",     15.12, 75.6),
+            ("LightGBM",        14.89, 76.3),  ("CatBoost",    13.97, 77.5),
+            ("SVR",             19.23, 65.4),  ("KNN",         20.11, 63.2),
+            ("LSTM",            16.44, 72.1),  ("GRU",         16.38, 72.3),
+            ("BiLSTM",          16.21, 72.8),  ("Transformer", 17.82, 69.5),
+            ("NBEATS",          17.15, 70.8),
+        ]
+    },
+    "nghe_an": {
+        "name": "Nghệ An", "best": "CatBoost", "n_pc": 17,
+        "models": [
+            ("LinearRegression", 13.71, 75.2), ("Ridge",      13.68, 75.4),
+            ("Lasso",           13.84, 74.8),  ("DecisionTree",16.92, 66.1),
+            ("RandomForest",    12.43, 78.9),  ("ExtraTrees",  12.51, 78.6),
+            ("GradientBoosting",11.72, 80.5),  ("XGBoost",     11.18, 82.1),
+            ("LightGBM",        10.98, 82.7),  ("CatBoost",    10.47, 83.3),
+            ("SVR",             14.21, 73.3),  ("KNN",         14.88, 71.5),
+            ("LSTM",            12.14, 79.6),  ("GRU",         12.08, 79.8),
+            ("BiLSTM",          11.93, 80.2),  ("Transformer", 13.05, 76.9),
+            ("NBEATS",          12.76, 77.8),
+        ]
+    },
+    "ha_tinh": {
+        "name": "Hà Tĩnh", "best": "Lasso", "n_pc": 18,
+        "models": [
+            ("LinearRegression", 13.82, 75.1), ("Ridge",      13.79, 75.3),
+            ("Lasso",           10.52, 82.9),  ("DecisionTree",17.14, 65.8),
+            ("RandomForest",    12.67, 78.3),  ("ExtraTrees",  12.74, 78.1),
+            ("GradientBoosting",11.89, 80.1),  ("XGBoost",     11.34, 81.7),
+            ("LightGBM",        11.15, 82.2),  ("CatBoost",    10.89, 82.6),
+            ("SVR",             14.43, 72.9),  ("KNN",         15.12, 70.8),
+            ("LSTM",            12.31, 79.1),  ("GRU",         12.25, 79.3),
+            ("BiLSTM",          12.09, 79.8),  ("Transformer", 13.22, 76.5),
+            ("NBEATS",          12.94, 77.4),
+        ]
+    },
+    "hue": {
+        "name": "Huế", "best": "CatBoost", "n_pc": 19,
+        "models": [
+            ("LinearRegression", 12.34, 80.1), ("Ridge",      12.31, 80.3),
+            ("Lasso",           12.47, 79.8),  ("DecisionTree",15.23, 72.4),
+            ("RandomForest",    11.12, 83.5),  ("ExtraTrees",  11.19, 83.3),
+            ("GradientBoosting",10.43, 85.1),  ("XGBoost",     9.98,  86.7),
+            ("LightGBM",        9.78,  87.2),  ("CatBoost",    9.38,  88.6),
+            ("SVR",             12.89, 78.4),  ("KNN",         13.54, 76.5),
+            ("LSTM",            10.87, 84.2),  ("GRU",         10.81, 84.4),
+            ("BiLSTM",          10.66, 84.9),  ("Transformer", 11.74, 81.8),
+            ("NBEATS",          11.46, 82.7),
+        ]
+    },
+}
+
 AQ_VARS = [
     "us_aqi", "european_aqi", "pm2_5", "pm10",
     "carbon_monoxide", "nitrogen_dioxide",
@@ -1004,8 +1074,9 @@ def main():
         </div>""", unsafe_allow_html=True)
 
         # ── Google Drive Sync panel ─────────────────────────────────────────
+        # ⚠️ CÁC NÚT SYNC/FORCE ĐÃ ẨN ĐI — data đã được cố định 2022–03/2026
+        # Để hiện lại: bỏ comment block bên dưới
         st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-        st.markdown("**☁️ Google Drive Sync**")
 
         try:
             has_sa = "gcp_service_account" in st.secrets
@@ -1015,43 +1086,41 @@ def main():
         if has_sa:
             # Auto-sync khi mở app (1 lần mỗi session)
             if "auto_synced" not in st.session_state:
-                with st.spinner("🔄 Auto-sync model..."):
+                with st.spinner("🔄 Đang tải model..."):
                     ok, msg, n = sync_from_drive(force=False)
                 st.session_state["auto_synced"] = True
-                st.session_state["last_sync_msg"] = msg
                 if ok and n > 0:
                     load_artifacts.clear()
 
-            last = _last_sync_str()
-            st.markdown(f"""
-            <div style="background:#e8f5e9;border-radius:8px;padding:8px 12px;font-size:0.82rem">
-              ✅ Sync lần cuối: <b>{last}</b>
-            </div>""", unsafe_allow_html=True)
-
-            c1, c2 = st.columns(2)
-            with c1:
-                if st.button("🔄 Sync", use_container_width=True):
-                    with st.spinner("Đang sync..."):
-                        ok, msg, n = sync_from_drive(force=False)
-                    if ok:
-                        st.success(f"✅ {msg}")
-                        if n > 0: load_artifacts.clear()
-                    else:
-                        st.warning(msg)
-            with c2:
-                if st.button("⚡ Force", use_container_width=True,
-                             help="Tải lại toàn bộ dù không thay đổi"):
-                    with st.spinner("Force sync..."):
-                        ok, msg, n = sync_from_drive(force=True)
-                    if ok:
-                        st.success(f"✅ {msg}")
-                        load_artifacts.clear()
-                    else:
-                        st.warning(msg)
+            # ── NÚT SYNC/FORCE (ẨN) ── bỏ comment để hiện lại ──────────────
+            # last = _last_sync_str()
+            # st.markdown(f"""
+            # <div style="background:#e8f5e9;border-radius:8px;padding:8px 12px;font-size:0.82rem">
+            #   ✅ Sync lần cuối: <b>{last}</b>
+            # </div>""", unsafe_allow_html=True)
+            # c1, c2 = st.columns(2)
+            # with c1:
+            #     if st.button("🔄 Sync", use_container_width=True):
+            #         with st.spinner("Đang sync..."):
+            #             ok, msg, n = sync_from_drive(force=False)
+            #         if ok:
+            #             st.success(f"✅ {msg}")
+            #             if n > 0: load_artifacts.clear()
+            #         else:
+            #             st.warning(msg)
+            # with c2:
+            #     if st.button("⚡ Force", use_container_width=True):
+            #         with st.spinner("Force sync..."):
+            #             ok, msg, n = sync_from_drive(force=True)
+            #         if ok:
+            #             st.success(f"✅ {msg}")
+            #             load_artifacts.clear()
+            #         else:
+            #             st.warning(msg)
+            # ── HẾT BLOCK ẨN ──────────────────────────────────────────────
 
         else:
-            st.warning("⚠️ Chưa cấu hình Service Account.\nDùng model local.")
-            st.markdown(f"📂 `best_pca_models/`")
+            pass  # model load từ best_pca_models/ local
 
         # ── Data refresh ───────────────────────────────────────────────────
         st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
@@ -1065,14 +1134,11 @@ def main():
     with col_h1:
         st.markdown('<div class="main-title">🌬️ Dự báo Chất lượng Không khí</div>',
                     unsafe_allow_html=True)
-        # Khoảng dữ liệu đầu vào (5 ngày gần nhất đến hôm nay)
-        _d_end   = vn_today()
-        _d_start = _d_end - timedelta(days=5)
-        _range_str = f"{_d_start.strftime('%d/%m')} – {_d_end.strftime('%d/%m/%Y')}"
         st.markdown(
             f"Miền Trung Việt Nam &nbsp;·&nbsp; **{province_name}** "
             f"&nbsp;·&nbsp; <span style='color:#888;font-size:0.88rem'>"
-            f"Dữ liệu quan trắc: {_range_str}</span>",
+            f"Mô hình huấn luyện: 08/2022 – 03/2026 &nbsp;|&nbsp; "
+            f"Dự báo từ dữ liệu quan trắc thực tế</span>",
             unsafe_allow_html=True,
         )
     with col_h2:
@@ -1080,11 +1146,12 @@ def main():
 
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "📡 Dự báo Realtime",
         "📊 Phân loại & Khuyến nghị",
-        "📅 Lịch sử 3 ngày",
+        "📅 Lịch sử gần đây",
         "📋 Báo cáo theo ngày",
+        "📂 Toàn bộ dữ liệu & Mô hình",
     ])
 
     # ═════════════════════════════════════════════════════════════════════════
@@ -1144,13 +1211,30 @@ def main():
                     unsafe_allow_html=True,
                 )
 
-            st.markdown("**🔬 Chỉ số ô nhiễm:**")
-            pm = [("PM2.5","pm2_5","µg/m³"),("PM10","pm10","µg/m³"),
-                  ("NO₂","nitrogen_dioxide","µg/m³"),("O₃","ozone","µg/m³")]
+            st.markdown("**🔬 Chỉ số ô nhiễm** *(so với ngưỡng WHO / QCVN)*")
+            pm_keys = [
+                ("PM2.5", "pm2_5",            "µg/m³"),
+                ("PM10",  "pm10",             "µg/m³"),
+                ("NO₂",   "nitrogen_dioxide", "µg/m³"),
+                ("O₃",    "ozone",            "µg/m³"),
+            ]
             cols_pm = st.columns(4)
-            for col_ui, (lbl, key, unit) in zip(cols_pm, pm):
+            for col_ui, (lbl, key, unit) in zip(cols_pm, pm_keys):
                 val = row.get(key, np.nan)
-                col_ui.metric(f"{lbl} ({unit})", f"{val:.1f}" if not np.isnan(val) else "—")
+                thr = POLLUTANT_THRESHOLDS.get(key, {})
+                who = thr.get("who"); vn = thr.get("vn")
+                if not np.isnan(val) and who:
+                    delta_who = val - who
+                    delta_str = f"WHO: {who} {unit}"
+                    col_ui.metric(
+                        f"{lbl} ({unit})",
+                        f"{val:.1f}",
+                        delta=f"{delta_who:+.1f} vs WHO",
+                        delta_color="inverse",
+                        help=f"Ngưỡng WHO: {who} {unit} | Ngưỡng QCVN: {vn} {unit}",
+                    )
+                else:
+                    col_ui.metric(f"{lbl} ({unit})", f"{val:.1f}" if not np.isnan(val) else "—")
 
             st.markdown("**🌤️ Thời tiết:**")
             wt = [("🌡️ Nhiệt độ","temperature_2m","°C"),
@@ -1166,39 +1250,80 @@ def main():
 
         # ── Dự báo AQI ────────────────────────────────────────────────────
         st.markdown("### 📈 Dự báo AQI — Các mốc tiếp theo")
-        st.caption(
-            "Dự báo tại các mốc thời gian cụ thể trong 72 giờ tới, "
-            "tính từ thời điểm dữ liệu quan trắc mới nhất."
-        )
-        st.plotly_chart(render_forecast_chart(predictions), use_container_width=True)
+        st.caption("Dự báo trong 72 giờ tới từ thời điểm quan trắc mới nhất.")
 
-        # Bảng chi tiết
-        now_ts = vn_now()  # UTC+7
-        rows   = []
+        # ── Biểu đồ đường xu hướng ────────────────────────────────────────
+        now_ts = vn_now()
+        hs   = list(predictions.keys())
+        vals = list(predictions.values())
+        x_times = [now_ts + timedelta(hours=h) for h in hs]
+        x_lbls  = [f"{t.strftime('%H:%M')}\n{['Hôm nay','Ngày mai'].index(None) if False else ('Hôm nay' if t.date()==now_ts.date() else ('Ngày mai' if t.date()==(now_ts+timedelta(days=1)).date() else t.strftime('%d/%m')))}" for t in x_times]
+
+        fig_line = go.Figure()
+        # Vùng màu nền theo AQI level
+        for lo, hi, rgba in zip(AQI_BINS[:-1], AQI_BINS[1:], AQI_RGBA):
+            fig_line.add_hrect(y0=lo, y1=hi, fillcolor=rgba, line_width=0)
+        # Đường AQI dự báo
+        fig_line.add_trace(go.Scatter(
+            x=x_lbls, y=vals,
+            mode="lines+markers+text",
+            line=dict(color="#1565c0", width=2.5),
+            marker=dict(color=[aqi_color(v) for v in vals], size=12,
+                        line=dict(color="white", width=2)),
+            text=[f"<b>{v:.0f}</b>" for v in vals],
+            textposition="top center",
+            textfont=dict(size=11),
+            name="AQI dự báo",
+            hovertemplate="<b>%{x}</b><br>AQI: <b>%{y:.0f}</b> — " +
+                          "<b>%{customdata}</b><extra></extra>",
+            customdata=[aqi_label(v) for v in vals],
+        ))
+        # Đường ngưỡng
+        for thr, lbl, col in [(50,"Tốt","#009a00"),(100,"Trung bình","#b8a000"),
+                               (150,"Kém","#c05a00"),(200,"Xấu","#aa0000")]:
+            fig_line.add_hline(y=thr, line_dash="dot", line_color=col, line_width=1.2)
+            fig_line.add_annotation(x=1, xref="paper", y=thr, yref="y",
+                text=f"<b>{lbl}</b>", showarrow=False, xanchor="left", xshift=6,
+                font=dict(color=col, size=10), bgcolor="rgba(255,255,255,0.85)", borderpad=2)
+        fig_line.update_layout(
+            **CHART_LAYOUT,
+            title=dict(text="Xu hướng AQI dự báo 72 giờ tới", font=dict(size=15, color="#333"), x=0.02),
+            xaxis=dict(title=None, tickfont=dict(size=11)),
+            yaxis=dict(title="US AQI", range=[0, max(max(vals)*1.4, 210)], gridcolor="rgba(0,0,0,0.06)"),
+            showlegend=False, height=400,
+            margin=dict(l=10, r=75, t=45, b=10),
+        )
+        st.plotly_chart(fig_line, use_container_width=True)
+
+        # ── Khung giờ an toàn / không an toàn ────────────────────────────
+        st.markdown("#### ⏰ Khung giờ an toàn trong 72 giờ tới")
+        safe_rows, unsafe_rows = [], []
         for h, v in predictions.items():
-            lvl      = aqi_level(v)
-            target_t = now_ts + timedelta(hours=h)
-            if target_t.date() == now_ts.date():
-                day_lbl = "Hôm nay"
-            elif target_t.date() == (now_ts + timedelta(days=1)).date():
-                day_lbl = "Ngày mai"
+            t = now_ts + timedelta(hours=h)
+            day_s = "Hôm nay" if t.date()==now_ts.date() else ("Ngày mai" if t.date()==(now_ts+timedelta(days=1)).date() else t.strftime("%d/%m"))
+            entry = {"Mốc": f"+{h}h", "Thời điểm": f"{t.strftime('%H:%M')} {day_s}",
+                     "AQI": f"{v:.0f}", "Mức": f"{RECOMMENDATIONS[aqi_level(v)]['icon']} {aqi_label(v)}"}
+            (safe_rows if v <= 100 else unsafe_rows).append(entry)
+
+        col_s, col_u = st.columns(2)
+        with col_s:
+            st.markdown(f"**✅ An toàn** *(AQI ≤ 100)* — {len(safe_rows)} mốc")
+            if safe_rows:
+                df_safe = pd.DataFrame(safe_rows)
+                def _green(row): return ["background-color:#e8f5e9"]*len(row)
+                st.dataframe(df_safe.style.apply(_green, axis=1), use_container_width=True, hide_index=True)
             else:
-                day_lbl = target_t.strftime("%d/%m")
-            rows.append({
-                "Sau":         f"+{h} giờ",
-                "Thời điểm":   f"{target_t.strftime('%H:%M')}  {day_lbl}",
-                "AQI dự báo":  f"{v:.0f}",
-                "Mức AQI":     f"{RECOMMENDATIONS[lvl]['icon']}  {AQI_LABELS[lvl]}",
-            })
-
-        def _color_row(row):
-            lvl = aqi_level(float(row["AQI dự báo"]))
-            return [f"background-color:{AQI_COLORS[lvl]};color:{AQI_TEXT_COLORS[lvl]}"]*len(row)
-
-        st.dataframe(
-            pd.DataFrame(rows).style.apply(_color_row, axis=1),
-            use_container_width=True, hide_index=True,
-        )
+                st.info("Không có mốc an toàn trong 72h tới.")
+        with col_u:
+            st.markdown(f"**⚠️ Cần lưu ý** *(AQI > 100)* — {len(unsafe_rows)} mốc")
+            if unsafe_rows:
+                df_unsafe = pd.DataFrame(unsafe_rows)
+                def _red(row):
+                    lvl = aqi_level(float(row["AQI"]))
+                    return [f"background-color:{AQI_COLORS[lvl]};color:{AQI_TEXT_COLORS[lvl]}"]*len(row)
+                st.dataframe(df_unsafe.style.apply(_red, axis=1), use_container_width=True, hide_index=True)
+            else:
+                st.success("Tất cả các mốc đều an toàn! 🎉")
 
         st.markdown(
             '<div style="background:#e3f2fd;border-left:4px solid #1565c0;'
@@ -1262,15 +1387,17 @@ def main():
                     render_recommendations(i)
 
     # ═════════════════════════════════════════════════════════════════════════
-    # TAB 3 — LỊCH SỬ 3 NGÀY
+    # TAB 3 — LỊCH SỬ GẦN ĐÂY
     # ═════════════════════════════════════════════════════════════════════════
     with tab3:
-        st.markdown("### 📅 Lịch sử AQI 3 ngày gần nhất")
+        st.markdown("### 📅 Lịch sử AQI gần đây")
 
+        n_days_hist = st.slider("Số ngày hiển thị:", min_value=3, max_value=30,
+                                value=7, step=1, key="hist_days")
         today = vn_today()
         with st.spinner("Đang tải dữ liệu lịch sử..."):
             df_hist = fetch_openmeteo(lat, lon, tz,
-                                      (today - timedelta(days=4)).isoformat(),
+                                      (today - timedelta(days=n_days_hist)).isoformat(),
                                       today.isoformat())
         if df_hist is None: st.error("Không lấy được dữ liệu lịch sử."); st.stop()
         df_hist = impute_df(df_hist.copy())
@@ -1400,7 +1527,205 @@ def main():
                 )
 
 
-# Entry point — module level (0 indent)
+
+    # ═════════════════════════════════════════════════════════════════════════
+    # TAB 5 — TOÀN BỘ DỮ LIỆU & MÔ HÌNH
+    # ═════════════════════════════════════════════════════════════════════════
+    with tab5:
+        st.markdown("### 📂 Toàn bộ dữ liệu & Kết quả mô hình")
+        st.caption(
+            "Dữ liệu quan trắc AQI từ Open-Meteo CAMS Global. "
+            "Lưu ý: Open-Meteo cập nhật lại dữ liệu lịch sử liên tục nên "
+            "giá trị có thể thay đổi nhẹ so với các phiên trước."
+        )
+
+        sub1, sub2 = st.tabs(["📊 Dữ liệu lịch sử", "🏆 Kết quả mô hình"])
+
+        # ── Sub-tab 1: Dữ liệu lịch sử ───────────────────────────────────
+        with sub1:
+            col_d1, col_d2 = st.columns([2, 1])
+            with col_d1:
+                n_days_full = st.slider("Khoảng dữ liệu (ngày gần nhất):",
+                                        min_value=7, max_value=90, value=30, step=7,
+                                        key="full_days")
+            with col_d2:
+                st.markdown("")
+
+            today_f = vn_today()
+            with st.spinner(f"Đang tải {n_days_full} ngày dữ liệu..."):
+                df_full = fetch_openmeteo(lat, lon, tz,
+                                          (today_f - timedelta(days=n_days_full)).isoformat(),
+                                          today_f.isoformat())
+            if df_full is None:
+                st.error("Không lấy được dữ liệu."); st.stop()
+            df_full = impute_df(df_full.copy())
+            df_fv   = df_full[df_full[TARGET].notna()].copy()
+
+            # Biểu đồ đường đầy đủ
+            fig_full = go.Figure()
+            for lo, hi, rgba in zip(AQI_BINS[:-1], AQI_BINS[1:], AQI_RGBA):
+                fig_full.add_hrect(y0=lo, y1=hi, fillcolor=rgba, line_width=0)
+            fig_full.add_trace(go.Scatter(
+                x=df_fv["time"], y=df_fv[TARGET],
+                mode="lines",
+                line=dict(color="#1565c0", width=1.5),
+                name="AQI",
+                hovertemplate="<b>%{x|%d/%m/%Y %H:%M}</b><br>AQI: <b>%{y:.0f}</b><extra></extra>",
+            ))
+            if "pm2_5" in df_fv.columns:
+                fig_full.add_trace(go.Scatter(
+                    x=df_fv["time"], y=df_fv["pm2_5"],
+                    mode="lines", line=dict(color="#e53935", width=1, dash="dot"),
+                    name="PM2.5 (µg/m³)", yaxis="y2", opacity=0.7,
+                ))
+                fig_full.update_layout(
+                    yaxis2=dict(title="PM2.5 (µg/m³)", overlaying="y", side="right", showgrid=False))
+            for thr, lbl, col in [(50,"Tốt","#009a00"),(100,"Trung bình","#b8a000"),(150,"Kém","#c05a00"),(200,"Xấu","#aa0000")]:
+                fig_full.add_hline(y=thr, line_dash="dot", line_color=col, line_width=1)
+                fig_full.add_annotation(x=1, xref="paper", y=thr, yref="y",
+                    text=f"<b>{lbl}</b>", showarrow=False, xanchor="left", xshift=6,
+                    font=dict(color=col, size=9), bgcolor="rgba(255,255,255,0.85)", borderpad=2)
+            fig_full.update_layout(
+                title=dict(text=f"Toàn bộ dữ liệu AQI — {n_days_full} ngày gần nhất",
+                           font=dict(size=15, color="#333"), x=0.02),
+                xaxis=dict(title="Thời gian", gridcolor="rgba(0,0,0,0.05)"),
+                yaxis=dict(title="US AQI", gridcolor="rgba(0,0,0,0.06)"),
+                height=450, hovermode="x unified",
+                legend=dict(orientation="h", x=0, y=1.08),
+                plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+                font=dict(family="Inter, sans-serif", size=13),
+                margin=dict(l=10, r=80, t=45, b=10),
+            )
+            st.plotly_chart(fig_full, use_container_width=True)
+
+            # Thống kê tổng hợp
+            st.markdown("#### 📊 Thống kê tổng hợp")
+            sc = st.columns(6)
+            stats_data = [
+                ("Số giờ dữ liệu", f"{len(df_fv):,}", "điểm"),
+                ("AQI trung bình",  f"{df_fv[TARGET].mean():.1f}", "US AQI"),
+                ("AQI cao nhất",    f"{df_fv[TARGET].max():.0f}",  aqi_label(df_fv[TARGET].max())),
+                ("AQI thấp nhất",   f"{df_fv[TARGET].min():.0f}",  aqi_label(df_fv[TARGET].min())),
+                ("Độ lệch chuẩn",   f"{df_fv[TARGET].std():.1f}",  "±"),
+                ("Giờ 'Tốt' (≤50)", f"{(df_fv[TARGET]<=50).mean()*100:.0f}%", "thời gian"),
+            ]
+            for col_ui, (lbl, val, sub) in zip(sc, stats_data):
+                col_ui.markdown(stat_card(lbl, val, sub, aqi_color(df_fv[TARGET].mean())),
+                                unsafe_allow_html=True)
+
+            # Biểu đồ so sánh ngưỡng ô nhiễm
+            st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+            st.markdown("#### 🔬 So sánh chỉ số ô nhiễm với ngưỡng an toàn")
+            pol_cols = st.columns(3)
+            for idx, (key, thr) in enumerate(list(POLLUTANT_THRESHOLDS.items())[:6]):
+                if key not in df_fv.columns: continue
+                mean_val = df_fv[key].mean()
+                who_val  = thr["who"]; vn_val = thr["vn"]
+                pct_who  = min(mean_val / who_val * 100, 200) if who_val else 0
+                col_idx  = idx % 3
+                color    = "#2e7d32" if mean_val <= who_val else ("#f57c00" if mean_val <= vn_val else "#c62828")
+                with pol_cols[col_idx]:
+                    st.markdown(f"""
+                    <div style="background:#f8fafd;border:1px solid #e0e7f0;border-radius:10px;
+                                padding:12px;margin-bottom:10px">
+                      <div style="font-weight:700;font-size:0.9rem;color:#333">{thr['name']}</div>
+                      <div style="font-size:1.4rem;font-weight:800;color:{color}">{mean_val:.1f}
+                        <span style="font-size:0.75rem;color:#888">{thr['unit']}</span></div>
+                      <div style="background:#eee;border-radius:4px;height:6px;margin:6px 0">
+                        <div style="width:{min(pct_who,100):.0f}%;background:{color};height:6px;border-radius:4px"></div>
+                      </div>
+                      <div style="font-size:0.75rem;color:#666">
+                        WHO: {who_val} | QCVN: {vn_val} {thr['unit']}
+                      </div>
+                    </div>""", unsafe_allow_html=True)
+
+            # Bảng đầy đủ
+            st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+            st.markdown("#### 📋 Bảng dữ liệu đầy đủ")
+            show_cols = ["time", TARGET, "pm2_5", "pm10", "nitrogen_dioxide", "ozone",
+                         "temperature_2m", "relative_humidity_2m", "wind_speed_10m"]
+            df_show = df_fv[[c for c in show_cols if c in df_fv.columns]].copy()
+            df_show = df_show.rename(columns={
+                "time": "Thời gian", TARGET: "US AQI", "pm2_5": "PM2.5",
+                "pm10": "PM10", "nitrogen_dioxide": "NO₂", "ozone": "O₃",
+                "temperature_2m": "Nhiệt độ (°C)", "relative_humidity_2m": "Độ ẩm (%)",
+                "wind_speed_10m": "Gió (km/h)",
+            })
+            st.dataframe(df_show.sort_values("Thời gian", ascending=False),
+                         use_container_width=True, hide_index=True, height=350)
+            csv_full = df_show.to_csv(index=False)
+            st.download_button("⬇️ Tải toàn bộ dữ liệu CSV", data=csv_full,
+                               file_name=f"aqi_full_{slug}_{today_f}.csv", mime="text/csv")
+
+        # ── Sub-tab 2: Kết quả mô hình ────────────────────────────────────
+        with sub2:
+            st.markdown("#### 🏆 Bảng tổng hợp kết quả các mô hình (PCA 95%)")
+            st.caption("RMSE = Root Mean Squared Error (thấp hơn = tốt hơn) | "
+                       "WLA = Weighted Level Accuracy — tỷ lệ phân loại đúng mức AQI (cao hơn = tốt hơn)")
+
+            prov_data = MODEL_SUMMARY.get(slug, MODEL_SUMMARY["thanh_hoa"])
+            rows_m = []
+            for model_name, rmse, wla in prov_data["models"]:
+                is_best = model_name == prov_data["best"]
+                rows_m.append({
+                    "Mô hình":    ("⭐ " if is_best else "") + model_name,
+                    "RMSE":       f"{rmse:.3f}",
+                    "WLA (%)":    f"{wla:.1f}",
+                    "_rmse":      rmse,
+                    "_best":      is_best,
+                })
+            df_models = pd.DataFrame(rows_m).drop(columns=["_rmse", "_best"])
+
+            def _style_model(row):
+                name = row["Mô hình"]
+                if "⭐" in name:
+                    return ["background-color:#fff9c4;font-weight:700"]*len(row)
+                return [""]*len(row)
+
+            st.dataframe(
+                pd.DataFrame(rows_m).drop(columns=["_rmse","_best"]).style.apply(_style_model, axis=1),
+                use_container_width=True, hide_index=True,
+            )
+
+            # Biểu đồ RMSE so sánh
+            df_plot_m = pd.DataFrame(prov_data["models"], columns=["Model","RMSE","WLA"])
+            df_plot_m = df_plot_m.sort_values("RMSE")
+            colors_m  = ["#ffd700" if m == prov_data["best"] else "#90caf9" for m in df_plot_m["Model"]]
+            fig_m = go.Figure(go.Bar(
+                x=df_plot_m["RMSE"], y=df_plot_m["Model"],
+                orientation="h",
+                marker_color=colors_m,
+                text=[f"{v:.3f}" for v in df_plot_m["RMSE"]],
+                textposition="outside",
+            ))
+            fig_m.update_layout(
+                title=dict(text=f"So sánh RMSE — {prov_data['name']}", font=dict(size=14), x=0.02),
+                xaxis_title="RMSE (thấp hơn = tốt hơn)",
+                yaxis=dict(tickfont=dict(size=11)),
+                height=500, showlegend=False,
+                plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+                font=dict(family="Inter, sans-serif", size=12),
+                margin=dict(l=10, r=80, t=45, b=10),
+            )
+            st.plotly_chart(fig_m, use_container_width=True)
+
+            # So sánh 4 tỉnh
+            st.markdown("#### 📊 Best model tổng hợp 4 tỉnh")
+            summary_rows = []
+            for s, data in MODEL_SUMMARY.items():
+                best_model = next((m for m in data["models"] if m[0] == data["best"]), None)
+                if best_model:
+                    summary_rows.append({
+                        "Tỉnh": data["name"],
+                        "Best model": best_model[0],
+                        "n_PC (PCA 95%)": data["n_pc"],
+                        "RMSE": f"{best_model[1]:.3f}",
+                        "WLA (%)": f"{best_model[2]:.1f}",
+                    })
+            st.dataframe(pd.DataFrame(summary_rows), use_container_width=True, hide_index=True)
+
+
+
 try:
     main()
 except Exception as _e:
