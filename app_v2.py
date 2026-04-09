@@ -1034,7 +1034,7 @@ def main():
 
             c1, c2 = st.columns(2)
             with c1:
-                if st.button("🔄 Sync", use_container_width=True):
+                if st.button("🔄 Sync", use_container_width='stretch'):
                     with st.spinner("Đang sync..."):
                         ok, msg, n = sync_from_drive(force=False)
                     if ok:
@@ -1043,7 +1043,7 @@ def main():
                     else:
                         st.warning(msg)
             with c2:
-                if st.button("⚡ Force", use_container_width=True,
+                if st.button("⚡ Force", use_container_width='stretch',
                              help="Tải lại toàn bộ dù không thay đổi"):
                     with st.spinner("Force sync..."):
                         ok, msg, n = sync_from_drive(force=True)
@@ -1053,27 +1053,13 @@ def main():
                     else:
                         st.warning(msg)
 
-            with st.expander("📖 Hướng dẫn Setup Drive", expanded=False):
-                st.markdown("""
-**1. Tạo Service Account:**
-- Google Cloud Console → IAM → Service Accounts → Create
-- Tạo JSON key → Download
-
-**2. Share folder Drive:**
-- Mở thư mục `best_pca_models` trên Drive
-- Share với email Service Account (viewer)
-
-**3. Cấu hình secrets:**
-*Local* — Tạo `.streamlit/secrets.toml'
-*Streamlit Cloud* → App Settings → Secrets → dán nội dung trên.
-                """)
         else:
             st.warning("⚠️ Chưa cấu hình Service Account.\nDùng model local.")
             st.markdown(f"📂 `best_pca_models/`")
 
         # ── Data refresh ───────────────────────────────────────────────────
         st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-        if st.button("🔄 Làm mới dữ liệu AQI", use_container_width=True):
+        if st.button("🔄 Làm mới dữ liệu AQI", use_container_width='stretch'):
             st.cache_data.clear(); st.rerun()
 
         # ── Model info ─────────────────────────────────────────────────────
@@ -1161,7 +1147,7 @@ def main():
 
         with col_g:
             st.plotly_chart(render_gauge(cur_aqi, province_name, cur_ts_str),
-                            use_container_width=True)
+                            use_container_width='stretch')
             # Mô tả bên dưới gauge — dùng markdown để hỗ trợ responsive
             st.markdown(
                 f'<div style="text-align:center;font-size:0.9rem;color:#555;'
@@ -1210,7 +1196,7 @@ def main():
             "Dự báo tại các mốc thời gian cụ thể trong 72 giờ tới, "
             "tính từ thời điểm dữ liệu quan trắc mới nhất."
         )
-        st.plotly_chart(render_forecast_chart(predictions), use_container_width=True)
+        st.plotly_chart(render_forecast_chart(predictions), use_container_width='stretch')
 
         # Bảng chi tiết
         now_ts = vn_now()  # UTC+7
@@ -1237,7 +1223,7 @@ def main():
 
         st.dataframe(
             pd.DataFrame(rows).style.apply(_color_row, axis=1),
-            use_container_width=True, hide_index=True,
+            use_container_width='stretch', hide_index=True,
         )
 
         st.markdown(
@@ -1292,7 +1278,7 @@ def main():
                 "AQI":      f"{AQI_BINS[i]} – {AQI_BINS[i+1]-1}",
                 "Ý nghĩa":  RECOMMENDATIONS[i]["desc"],
             } for i in range(6)])
-            st.dataframe(df_tbl, use_container_width=True, hide_index=True)
+            st.dataframe(df_tbl, use_container_width='stretch', hide_index=True)
             st.markdown("---")
             for i in range(6):
                 with st.expander(
@@ -1316,7 +1302,7 @@ def main():
         df_hist = impute_df(df_hist.copy())
 
         # ── Biểu đồ chính ─────────────────────────────────────────────────
-        st.plotly_chart(render_history_chart(df_hist), use_container_width=True)
+        st.plotly_chart(render_history_chart(df_hist), use_container_width='stretch')
 
         # ── Thống kê ──────────────────────────────────────────────────────
         st.markdown("#### 📊 Thống kê")
@@ -1345,17 +1331,17 @@ def main():
 
         col_pie, col_tbl = st.columns([1, 1])
         with col_pie:
-            st.plotly_chart(render_pie(lc), use_container_width=True)
+            st.plotly_chart(render_pie(lc), use_container_width='stretch')
         with col_tbl:
             df_dist = pd.DataFrame({
                 "Mức":      [f"{RECOMMENDATIONS[i]['icon']} {AQI_LABELS[i]}" for i in lc.index],
                 "Số giờ":   lc.values,
                 "Tỷ lệ (%)": (lc.values / lc.values.sum() * 100).round(1),
             })
-            st.dataframe(df_dist, use_container_width=True, hide_index=True, height=240)
+            st.dataframe(df_dist, use_container_width='stretch', hide_index=True, height=240)
 
         st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-        st.plotly_chart(render_hourly_pattern(df_hist), use_container_width=True)
+        st.plotly_chart(render_hourly_pattern(df_hist), use_container_width='stretch')
 
         # ── Download ──────────────────────────────────────────────────────
         cols_dl = ["time", TARGET, "pm2_5", "pm10",
@@ -1410,7 +1396,7 @@ def main():
                 )
             with col_f2:
                 st.markdown("")
-                if st.button("📄 Tải báo cáo CSV", use_container_width=True):
+                if st.button("📄 Tải báo cáo CSV", use_container_width='stretch'):
                     csv_rpt = df_report[["time", TARGET, "pm2_5", "temperature_2m",
                                           "relative_humidity_2m", "wind_speed_10m"]].to_csv(index=False)
                     st.download_button(
@@ -1425,9 +1411,8 @@ def main():
             else:
                 df_filtered = df_report[df_report["time"].dt.date.isin(selected_dates)]
                 html_report = build_daily_report_html(df_filtered, province_name)
-                import streamlit.components.v1 as components
                 estimated_height = max(520 * len(selected_dates) + 120, 600)
-                components.html(
+                st.iframe(
                     f"""<!DOCTYPE html>
 <html>
 <head>
