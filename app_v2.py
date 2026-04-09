@@ -1,18 +1,14 @@
 """
 AQI Forecast Web Demo — Miền Trung Việt Nam
 ===========================================
-Version cuối: fix tất cả lỗi + Streamlit Cloud deploy với Service Account.
+Version cuối: Streamlit Cloud deploy với Service Account.
 
 Cách deploy lên Streamlit Cloud:
-  1. Push toàn bộ project lên GitHub (KHÔNG cần commit best_pca_models/)
+  1. Push toàn bộ project lên GitHub 
   2. Vào share.streamlit.io → New app → chọn repo
   3. Vào App settings → Secrets → dán nội dung secrets.toml (xem README)
   4. Deploy
 
-Cách chạy local:
-  1. Tạo file .streamlit/secrets.toml (xem README)
-  2. pip install -r requirements.txt
-  3. streamlit run app.py
 """
 
 from __future__ import annotations
@@ -1365,7 +1361,7 @@ def main():
                 selected_dates = st.multiselect(
                     "Chọn ngày hiển thị:",
                     options=all_dates,
-                    default=all_dates[:4],   # mặc định 4 ngày gần nhất
+                    default=all_dates[:7],   # mặc định 7 ngày gần nhất
                     format_func=lambda d: d.strftime("%A, %d/%m/%Y").replace(
                         "Monday","Thứ Hai").replace("Tuesday","Thứ Ba"
                         ).replace("Wednesday","Thứ Tư").replace("Thursday","Thứ Năm"
