@@ -1680,7 +1680,7 @@ def main():
                 return [""]*len(row)
 
             st.dataframe(
-                pd.DataFrame(rows_m).drop(columns=["_rmse","_best"]).style.apply(_style_model, axis=1),
+                pd.DataFrame(rows_m).drop(columns=["_best"]).style.apply(_style_model, axis=1),
                 use_container_width=True, hide_index=True,
             )
 
