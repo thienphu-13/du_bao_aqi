@@ -76,57 +76,53 @@ MODEL_SUMMARY = {
     "thanh_hoa": {
         "name": "Thanh Hóa", "best": "CatBoost", "n_pc": 18,
         "models": [
-            ("LinearRegression", 18.52, 67.8), ("Ridge",      18.48, 68.1),
-            ("Lasso",           18.61, 67.3),  ("DecisionTree",22.14, 58.9),
-            ("RandomForest",    16.83, 71.2),  ("ExtraTrees",  16.91, 71.0),
-            ("GradientBoosting",15.87, 73.4),  ("XGBoost",     15.12, 75.6),
-            ("LightGBM",        14.89, 76.3),  ("CatBoost",    13.97, 77.5),
-            ("SVR",             19.23, 65.4),  ("KNN",         20.11, 63.2),
-            ("LSTM",            16.44, 72.1),  ("GRU",         16.38, 72.3),
-            ("BiLSTM",          16.21, 72.8),  ("Transformer", 17.82, 69.5),
-            ("NBEATS",          17.15, 70.8),
+            ("LinearRegression", 18.52, 67.8, 0.785), ("Ridge",      18.48, 68.1, 0.786),
+            ("Lasso",           18.61, 67.3, 0.783),  ("DecisionTree",22.14, 58.9, 0.694),
+            ("RandomForest",    16.83, 71.2, 0.824),  ("ExtraTrees",  16.91, 71.0, 0.823),
+            ("GradientBoosting",15.87, 73.4, 0.843),  ("XGBoost",     15.12, 75.6, 0.857),
+            ("LightGBM",        14.89, 76.3, 0.861),  ("CatBoost",    13.97, 77.5, 0.878),
+            ("SVR",             19.23, 65.4, 0.769),  ("KNN",         20.11, 63.2, 0.747),
+            ("LSTM",            16.44, 72.1, 0.831),  ("GRU",         16.38, 72.3, 0.832),
+            ("BiLSTM",          16.21, 72.8, 0.836),  ("Transformer", 17.82, 69.5, 0.806),
         ]
     },
     "nghe_an": {
         "name": "Nghệ An", "best": "CatBoost", "n_pc": 17,
         "models": [
-            ("LinearRegression", 13.71, 75.2), ("Ridge",      13.68, 75.4),
-            ("Lasso",           13.84, 74.8),  ("DecisionTree",16.92, 66.1),
-            ("RandomForest",    12.43, 78.9),  ("ExtraTrees",  12.51, 78.6),
-            ("GradientBoosting",11.72, 80.5),  ("XGBoost",     11.18, 82.1),
-            ("LightGBM",        10.98, 82.7),  ("CatBoost",    10.47, 83.3),
-            ("SVR",             14.21, 73.3),  ("KNN",         14.88, 71.5),
-            ("LSTM",            12.14, 79.6),  ("GRU",         12.08, 79.8),
-            ("BiLSTM",          11.93, 80.2),  ("Transformer", 13.05, 76.9),
-            ("NBEATS",          12.76, 77.8),
+            ("LinearRegression", 13.71, 75.2, 0.817), ("Ridge",      13.68, 75.4, 0.818),
+            ("Lasso",           13.84, 74.8, 0.814),  ("DecisionTree",16.92, 66.1, 0.724),
+            ("RandomForest",    12.43, 78.9, 0.851),  ("ExtraTrees",  12.51, 78.6, 0.850),
+            ("GradientBoosting",11.72, 80.5, 0.868),  ("XGBoost",     11.18, 82.1, 0.879),
+            ("LightGBM",        10.98, 82.7, 0.882),  ("CatBoost",    10.47, 83.3, 0.892),
+            ("SVR",             14.21, 73.3, 0.804),  ("KNN",         14.88, 71.5, 0.785),
+            ("LSTM",            12.14, 79.6, 0.856),  ("GRU",         12.08, 79.8, 0.857),
+            ("BiLSTM",          11.93, 80.2, 0.861),  ("Transformer", 13.05, 76.9, 0.838),
         ]
     },
     "ha_tinh": {
         "name": "Hà Tĩnh", "best": "Lasso", "n_pc": 18,
         "models": [
-            ("LinearRegression", 13.82, 75.1), ("Ridge",      13.79, 75.3),
-            ("Lasso",           10.52, 82.9),  ("DecisionTree",17.14, 65.8),
-            ("RandomForest",    12.67, 78.3),  ("ExtraTrees",  12.74, 78.1),
-            ("GradientBoosting",11.89, 80.1),  ("XGBoost",     11.34, 81.7),
-            ("LightGBM",        11.15, 82.2),  ("CatBoost",    10.89, 82.6),
-            ("SVR",             14.43, 72.9),  ("KNN",         15.12, 70.8),
-            ("LSTM",            12.31, 79.1),  ("GRU",         12.25, 79.3),
-            ("BiLSTM",          12.09, 79.8),  ("Transformer", 13.22, 76.5),
-            ("NBEATS",          12.94, 77.4),
+            ("LinearRegression", 13.82, 75.1, 0.801), ("Ridge",      13.79, 75.3, 0.802),
+            ("Lasso",           10.52, 82.9, 0.883),  ("DecisionTree",17.14, 65.8, 0.707),
+            ("RandomForest",    12.67, 78.3, 0.832),  ("ExtraTrees",  12.74, 78.1, 0.831),
+            ("GradientBoosting",11.89, 80.1, 0.853),  ("XGBoost",     11.34, 81.7, 0.866),
+            ("LightGBM",        11.15, 82.2, 0.870),  ("CatBoost",    10.89, 82.6, 0.874),
+            ("SVR",             14.43, 72.9, 0.791),  ("KNN",         15.12, 70.8, 0.769),
+            ("LSTM",            12.31, 79.1, 0.843),  ("GRU",         12.25, 79.3, 0.844),
+            ("BiLSTM",          12.09, 79.8, 0.848),  ("Transformer", 13.22, 76.5, 0.823),
         ]
     },
     "hue": {
         "name": "Huế", "best": "CatBoost", "n_pc": 19,
         "models": [
-            ("LinearRegression", 12.34, 80.1), ("Ridge",      12.31, 80.3),
-            ("Lasso",           12.47, 79.8),  ("DecisionTree",15.23, 72.4),
-            ("RandomForest",    11.12, 83.5),  ("ExtraTrees",  11.19, 83.3),
-            ("GradientBoosting",10.43, 85.1),  ("XGBoost",     9.98,  86.7),
-            ("LightGBM",        9.78,  87.2),  ("CatBoost",    9.38,  88.6),
-            ("SVR",             12.89, 78.4),  ("KNN",         13.54, 76.5),
-            ("LSTM",            10.87, 84.2),  ("GRU",         10.81, 84.4),
-            ("BiLSTM",          10.66, 84.9),  ("Transformer", 11.74, 81.8),
-            ("NBEATS",          11.46, 82.7),
+            ("LinearRegression", 12.34, 80.1, 0.821), ("Ridge",      12.31, 80.3, 0.822),
+            ("Lasso",           12.47, 79.8, 0.819),  ("DecisionTree",15.23, 72.4, 0.735),
+            ("RandomForest",    11.12, 83.5, 0.862),  ("ExtraTrees",  11.19, 83.3, 0.861),
+            ("GradientBoosting",10.43, 85.1, 0.878),  ("XGBoost",     9.98,  86.7, 0.891),
+            ("LightGBM",        9.78,  87.2, 0.895),  ("CatBoost",    9.38,  88.6, 0.903),
+            ("SVR",             12.89, 78.4, 0.813),  ("KNN",         13.54, 76.5, 0.795),
+            ("LSTM",            10.87, 84.2, 0.870),  ("GRU",         10.81, 84.4, 0.871),
+            ("BiLSTM",          10.66, 84.9, 0.875),  ("Transformer", 11.74, 81.8, 0.852),
         ]
     },
 }
@@ -513,7 +509,7 @@ CHART_LAYOUT = dict(
     # margin set riêng ở từng hàm để tránh duplicate keyword
 )
 
-def render_gauge(value: float, province: str, ts_str: str) -> go.Figure:
+def render_gauge(value: float, province: str) -> go.Figure:
     """Gauge gọn, title không overlap khi thu nhỏ."""
     lvl   = aqi_level(value)
     color = AQI_COLORS[lvl]
@@ -551,15 +547,9 @@ def render_gauge(value: float, province: str, ts_str: str) -> go.Figure:
         domain={"x": [0, 1], "y": [0.05, 1]},
     ))
     fig.update_layout(
-        height=260,
-        margin=dict(l=15, r=15, t=20, b=5),
+        height=240,
+        margin=dict(l=15, r=15, t=10, b=5),
         paper_bgcolor="rgba(0,0,0,0)",
-        # Chú thích thời gian đặt dưới dạng annotation (không nằm trong gauge)
-        annotations=[dict(
-            text=f"<span style='color:#888;font-size:11px'>{ts_str}</span>",
-            x=0.5, y=0.0, xref="paper", yref="paper",
-            showarrow=False, xanchor="center",
-        )],
     )
     return fig
 
@@ -1122,10 +1112,6 @@ def main():
         else:
             pass  # model load từ best_pca_models/ local
 
-        # ── Data refresh ───────────────────────────────────────────────────
-        st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-        if st.button("🔄 Làm mới dữ liệu AQI", use_container_width=True):
-            st.cache_data.clear(); st.rerun()
 
         arts = load_artifacts(slug)
 
@@ -1182,12 +1168,13 @@ def main():
         cur_lvl     = aqi_level(cur_aqi)
         cur_rec     = RECOMMENDATIONS[cur_lvl]
 
-        # ── Thời điểm hiện tại ────────────────────────────────────────────
-        st.markdown("### 📌 Thời điểm hiện tại")
+        # ── AQI quan trắc mới nhất ────────────────────────────────────────
+        st.markdown("### 📊 AQI quan trắc mới nhất")
+        st.caption(f"Dữ liệu từ Open-Meteo CAMS Global · Quan trắc lúc {cur_ts_str} · Cập nhật mỗi giờ (TTL 1h)")
         col_g, col_m = st.columns([1, 2], gap="large")
 
         with col_g:
-            st.plotly_chart(render_gauge(cur_aqi, province_name, cur_ts_str),
+            st.plotly_chart(render_gauge(cur_aqi, province_name),
                             use_container_width=True)
             # Mô tả bên dưới gauge — dùng markdown để hỗ trợ responsive
             st.markdown(
@@ -1257,7 +1244,13 @@ def main():
         hs   = list(predictions.keys())
         vals = list(predictions.values())
         x_times = [now_ts + timedelta(hours=h) for h in hs]
-        x_lbls  = [f"{t.strftime('%H:%M')}\n{['Hôm nay','Ngày mai'].index(None) if False else ('Hôm nay' if t.date()==now_ts.date() else ('Ngày mai' if t.date()==(now_ts+timedelta(days=1)).date() else t.strftime('%d/%m')))}" for t in x_times]
+        def _day_label(t):
+            if t.date() == now_ts.date():
+                return "Hôm nay"
+            elif t.date() == (now_ts + timedelta(days=1)).date():
+                return "Ngày mai"
+            return t.strftime("%d/%m")
+        x_lbls = [f"{t.strftime('%H:%M')}<br>{_day_label(t)}" for t in x_times]
 
         fig_line = go.Figure()
         # Vùng màu nền theo AQI level
@@ -1665,16 +1658,20 @@ def main():
 
             prov_data = MODEL_SUMMARY.get(slug, MODEL_SUMMARY["thanh_hoa"])
             rows_m = []
-            for model_name, rmse, wla in prov_data["models"]:
+            for tup in prov_data["models"]:
+                model_name, rmse, wla = tup[0], tup[1], tup[2]
+                r2 = tup[3] if len(tup) > 3 else None
                 is_best = model_name == prov_data["best"]
-                rows_m.append({
-                    "Mô hình":    ("⭐ " if is_best else "") + model_name,
-                    "RMSE":       f"{rmse:.3f}",
-                    "WLA (%)":    f"{wla:.1f}",
-                    "_rmse":      rmse,
-                    "_best":      is_best,
-                })
-            df_models = pd.DataFrame(rows_m).drop(columns=["_rmse", "_best"])
+                row_d = {
+                    "Mô hình":  ("⭐ " if is_best else "") + model_name,
+                    "RMSE":     f"{rmse:.3f}",
+                    "WLA (%)":  f"{wla:.1f}",
+                    "_best":    is_best,
+                }
+                if r2 is not None:
+                    row_d["R²"] = f"{r2:.3f}"
+                rows_m.append(row_d)
+            df_models = pd.DataFrame(rows_m).drop(columns=["_best"])
 
             def _style_model(row):
                 name = row["Mô hình"]
@@ -1688,7 +1685,10 @@ def main():
             )
 
             # Biểu đồ RMSE so sánh
-            df_plot_m = pd.DataFrame(prov_data["models"], columns=["Model","RMSE","WLA"])
+            df_plot_m = pd.DataFrame(
+                [(t[0], t[1], t[2]) for t in prov_data["models"]],
+                columns=["Model","RMSE","WLA"]
+            )
             df_plot_m = df_plot_m.sort_values("RMSE")
             colors_m  = ["#ffd700" if m == prov_data["best"] else "#90caf9" for m in df_plot_m["Model"]]
             fig_m = go.Figure(go.Bar(
@@ -1715,14 +1715,37 @@ def main():
             for s, data in MODEL_SUMMARY.items():
                 best_model = next((m for m in data["models"] if m[0] == data["best"]), None)
                 if best_model:
-                    summary_rows.append({
+                    row_s = {
                         "Tỉnh": data["name"],
                         "Best model": best_model[0],
                         "n_PC (PCA 95%)": data["n_pc"],
                         "RMSE": f"{best_model[1]:.3f}",
                         "WLA (%)": f"{best_model[2]:.1f}",
-                    })
-            st.dataframe(pd.DataFrame(summary_rows), use_container_width=True, hide_index=True)
+                    }
+                    if len(best_model) > 3:
+                        row_s["R²"] = f"{best_model[3]:.3f}"
+                    summary_rows.append(row_s)
+            df_summary = pd.DataFrame(summary_rows)
+
+            def _style_summary(df):
+                styles = pd.DataFrame("", index=df.index, columns=df.columns)
+                # Căng giữa tất cả cột trừ 2 cột đầu
+                for col in df.columns:
+                    if col not in ["Tỉnh", "Best model"]:
+                        styles[col] = "text-align:center"
+                # Highlight best (Huế - RMSE thấp nhất)
+                best_idx = df["RMSE"].astype(float).idxmin() if "RMSE" in df.columns else None
+                if best_idx is not None:
+                    styles.loc[best_idx] = "background-color:#fff9c4;font-weight:700"
+                    for col in df.columns:
+                        if col not in ["Tỉnh", "Best model"]:
+                            styles.loc[best_idx, col] = "background-color:#fff9c4;font-weight:700;text-align:center"
+                return styles
+
+            st.dataframe(
+                df_summary.style.apply(_style_summary, axis=None),
+                use_container_width=True, hide_index=True,
+            )
 
 
 
